@@ -25,6 +25,18 @@ patterns = [
     (   re.compile(r"//(.*?)(//|$)"),
         lambda match: "<em>{0}</em>".format(*match.groups())
     ),
+    # monospaced, e.g. "the ##foo## variable" (non-standard)
+    (   re.compile(r"##(.*?)(##|$)"),
+        lambda match: "<tt>{0}</tt>".format(*match.groups())
+    ),
+    # superscript, e.g. "E=mc^^2^^" (non-standard)
+    (   re.compile(r"\^\^(.*?)(\^\^|$)"),
+        lambda match: "<sup>{0}</sup>".format(*match.groups())
+    ),
+    # subscript, e.g. "H,,2,,SO,,4,," (non-standard)
+    (   re.compile(r",,(.*?)(,,|$)"),
+        lambda match: "<sub>{0}</sub>".format(*match.groups())
+    ),
 ]
 
 HEADING = [n * "=" for n in range(7)]
@@ -94,6 +106,9 @@ def __test__():
     assert to_xhtml("//foo\n\nbar") == "<p><em>foo</em></p><p>bar</p>"
     assert to_xhtml("**foo\n\n**bar") == "<p><strong>foo</strong></p><p><strong>bar</strong></p>"
     assert to_xhtml("//foo\n\n//bar") == "<p><em>foo</em></p><p><em>bar</em></p>"
+    assert to_xhtml("the ##foo## variable") == "<p>the <tt>foo</tt> variable</p>"
+    assert to_xhtml("E=mc^^2^^") == "<p>E=mc<sup>2</sup></p>"
+    assert to_xhtml("H,,2,,SO,,4,,") == "<p>H<sub>2</sub>SO<sub>4</sub></p>"
     assert to_xhtml("foo\n---\nbar") == "<p>foo --- bar</p>"
     assert to_xhtml("foo\n----\nbar") == "<p>foo</p><hr /><p>bar</p>"
     assert to_xhtml("foo\n-----\nbar") == "<p>foo</p><hr /><p>bar</p>"
