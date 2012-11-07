@@ -136,7 +136,7 @@ class Document(object):
         if fragment:
             return "".join(out)
         else:
-            return "<!doctype html>\n<html><head></head><body>{0}</body></html>".format("".join(out))
+            return "<html xmlns=\"http://www.w3.org/1999/xhtml\"><head></head><body>{0}</body></html>".format("".join(out))
 
 def to_xhtml(markup, fragment=True):
     out = Document(markup).__xhtml__(fragment)
