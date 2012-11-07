@@ -15,7 +15,7 @@ The ending equal signs should not be displayed:
 
 You can make things **bold** or //italic// or **//both//** or //**both**//.
 
-Although it's non-standard, you can also make things ,,subscript,,, ^^superscript^^ or ##monospaced##. Science taught me that E=mc^^2^^ and sulphuric acid is H,,2,,SO,,4,,.
+Although it's non-standard, you can also make things ,,subscript,, or ^^superscript^^ . Science taught me that E=mc^^2^^ and sulphuric acid is H,,2,,SO,,4,,.
 
 Character formatting extends across line breaks: **bold,
 this is still bold. This line deliberately does not end in star-star.
@@ -85,12 +85,17 @@ Guitar Chord C:
 ||---|---|---|
 }}}
 
-You can also add class names to be added to the pre tag:
-{{{ javascript code
-var sum = function(a, b) {
-    return a + b;
+Quadruple braces will create {{{{code}}}} tags which can also be inside {{{{pre}}}} tags.
+{{{{ brush: js
+// this will return the maximum of a & b
+var max = function(a, b) {
+    if (a<b) {
+        return b;
+    } else {
+        return a;
+    }
 }
-}}}
+}}}}
 
 You can also use it inline nowiki {{{ in a sentence }}} like this.
 

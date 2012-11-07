@@ -6,24 +6,20 @@ from __future__ import print_function
 import re
 import sys
 
+entities = [
+    ("&", "&amp;"),
+    ("'", "&apos;"),
+    ('"', "&quot;"),
+    ("<", "&lt;"),
+    (">", "&gt;"),
+]
+
 patterns = [
-    (   re.compile(r"&"),
-        lambda match: "&amp;"
-    ),
-    (   re.compile(r"'"),
-        lambda match: "&apos;"
-    ),
-    (   re.compile(r'"'),
-        lambda match: "&quot;"
-    ),
-    (   re.compile(r"<"),
-        lambda match: "&lt;"
-    ),
-    (   re.compile(r">"),
-        lambda match: "&gt;"
-    ),
     (   re.compile(r"\\\\"),
         lambda match: "<br />"
+    ),
+    (   re.compile(r"\{\{\{\{(.*?)(\}\}\}\})"),
+        lambda match: "<code>{0}</code>".format(*match.groups())
     ),
     (   re.compile(r"\{\{\{(.*?)(\}\}\})"),
         lambda match: "<tt>{0}</tt>".format(*match.groups())
@@ -69,6 +65,14 @@ class Document(object):
             elif line.startswith(HORIZONTAL_RULE):
                 self.blocks.append([HORIZONTAL_RULE])
                 self.blocks.append([])
+            elif line.startswith("{{{{") and "}}}}" not in line:
+                self.blocks.append(["{{{{" + " ".join(line[4:].lstrip().split())])
+                self.blocks.append([])
+                literal = True
+            elif line.startswith("}}}}"):
+                self.blocks.append(["}}}}"])
+                self.blocks.append([])
+                literal = False
             elif line.startswith("{{{") and "}}}" not in line:
                 self.blocks.append(["{{{" + " ".join(line[3:].lstrip().split())])
                 self.blocks.append([])
@@ -89,7 +93,7 @@ class Document(object):
                     self.blocks.append([])
         self.blocks = [" ".join(block) for block in self.blocks if block]
         
-    def __xhtml__(self):
+    def __xhtml__(self, fragment=True):
         out = []
         literal = False
         for block in self.blocks:
@@ -100,6 +104,15 @@ class Document(object):
                         break
             elif block == HORIZONTAL_RULE:
                 out.append("<hr />")
+            elif block == "{{{{":
+                out.append("<pre><code>")
+                literal = True
+            elif block.startswith("{{{{"):
+                out.append('<pre class="{0}"><code>'.format(block[4:]))
+                literal = True
+            elif block.startswith("}}}}"):
+                out.append("</code></pre>")
+                literal = False
             elif block == "{{{":
                 out.append("<pre>")
                 literal = True
@@ -110,6 +123,8 @@ class Document(object):
                 out.append("</pre>")
                 literal = False
             else:
+                for char, entity in entities:
+                    block = block.replace(char, entity)
                 if literal:
                     out.append(block)
                 else:
@@ -118,10 +133,13 @@ class Document(object):
                         block = pattern[0].sub(pattern[1], block)
                     out.append(block)
                     out.append("</p>")
-        return "".join(out)
+        if fragment:
+            return "".join(out)
+        else:
+            return "<!doctype html>\n<html><head></head><body>{0}</body></html>".format("".join(out))
 
-def to_xhtml(markup):
-    out = Document(markup).__xhtml__()
+def to_xhtml(markup, fragment=True):
+    out = Document(markup).__xhtml__(fragment)
     #print(out)
     return out
 
@@ -181,7 +199,7 @@ if __name__ == "__main__":
         else:
             f = open(arg)
             try:
-                print(to_xhtml(f.read()))
+                print(to_xhtml(f.read(), fragment=False))
             finally:
                 f.close()
 
