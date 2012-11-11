@@ -112,7 +112,15 @@ a tilde escapes itself: ~~xxx
 
 This should be a flower with the ALT text "this is a flower" if your wiki supports ALT text on images:
 
-{{Red-Flower.jpg|here is a red flower}}
+{{http://py2neo.org/art/py2neo.128x128.back.png|here is a red flower}}
+
+And one without a caption:
+
+{{http://py2neo.org/art/py2neo.128x128.back.png}}
+
+Linked image:
+
+[[http://py2neo.org/|{{http://py2neo.org/art/py2neo.128x128.back.png}}]]
 
 === Creole 0.4 ===
 

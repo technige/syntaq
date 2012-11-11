@@ -4,7 +4,15 @@
 from __future__ import print_function
 
 import re
-import sys
+
+HEADING = re.compile(r"^(={1,6})\s*(.*[^=\s])\s*=*")
+HORIZONTAL_RULE = re.compile(r"^(-{4})")
+ORDERED_LIST = re.compile(r"^(#+)\s*(.*)")
+PREFORMATTED = re.compile(r"^(\{\{\{)(?!\{)\s*([-\s\w]*)", re.UNICODE)
+PREFORMATTED_CODE = re.compile(r"^(\{\{\{\{)(?!\{)\s*([-\s\w]*)", re.UNICODE)
+UNORDERED_LIST = re.compile(r"^(\*+)\s*(.*)")
+
+END_OF_PREFORMATTED = re.compile(r"^\s*(\}\}\})")
 
 entities = [
     ("&", "&amp;"),
@@ -14,7 +22,9 @@ entities = [
     (">", "&gt;"),
 ]
 
-patterns = [
+
+
+elements = [
     (   re.compile(r"\\\\"),
         lambda match: "<br />"
     ),
@@ -22,6 +32,16 @@ patterns = [
         lambda match: "<code>{0}</code>".format(*match.groups())
     ),
     (   re.compile(r"\{\{\{(.*?)(\}\}\})"),
+        lambda match: "<tt>{0}</tt>".format(*match.groups()) # WRONG! should be nowiki
+    ),
+    (   re.compile(r"\{\{([^\|]*?)(\}\}|$)"),
+        lambda match: "<img src=\"{0}\" />".format(*match.groups())
+    ),
+    (   re.compile(r"\{\{([^\|]*?)\|([^\|]*?)(\}\}|$)"),
+        lambda match: "<img src=\"{0}\" alt=\"{1}\" />".format(*match.groups())
+    ),
+    # monospace
+    (   re.compile(r"##(.*?)(##|$)"),
         lambda match: "<tt>{0}</tt>".format(*match.groups())
     ),
     (   re.compile(r"\*\*(.*?)(\*\*|$)"),
@@ -30,11 +50,11 @@ patterns = [
     (   re.compile(r"(?<!:)//(.*?)(?<!:)(//|$)"),
         lambda match: "<em>{0}</em>".format(*match.groups())
     ),
-    # superscript, e.g. "E=mc^^2^^" (non-standard)
+    # superscript, e.g. "E=mc^^2^^"
     (   re.compile(r"\^\^(.*?)(\^\^|$)"),
         lambda match: "<sup>{0}</sup>".format(*match.groups())
     ),
-    # subscript, e.g. "H,,2,,SO,,4,," (non-standard)
+    # subscript, e.g. "H,,2,,SO,,4,,"
     (   re.compile(r",,(.*?)(,,|$)"),
         lambda match: "<sub>{0}</sub>".format(*match.groups())
     ),
@@ -46,160 +66,167 @@ patterns = [
     ),
 ]
 
-HEADING = [n * "=" for n in range(7)]
-HORIZONTAL_RULE = "----"
-
 class Document(object):
 
     def __init__(self, markup):
-        self.blocks = [[]]
-        literal = False
-        for raw_line in markup.splitlines(True):
-            line = raw_line.strip()
-            if line.startswith("="):
-                for level in range(6, 0, -1):
-                    if line.startswith(HEADING[level]):
-                        self.blocks.append([level * "=" + line.strip("=").strip()])
-                        break
-                self.blocks.append([])
-            elif line.startswith(HORIZONTAL_RULE):
-                self.blocks.append([HORIZONTAL_RULE])
-                self.blocks.append([])
-            elif line.startswith("{{{{") and "}}}}" not in line:
-                self.blocks.append(["{{{{" + " ".join(line[4:].lstrip().split())])
-                self.blocks.append([])
-                literal = True
-            elif line.startswith("}}}}"):
-                self.blocks.append(["}}}}"])
-                self.blocks.append([])
-                literal = False
-            elif line.startswith("{{{") and "}}}" not in line:
-                self.blocks.append(["{{{" + " ".join(line[3:].lstrip().split())])
-                self.blocks.append([])
-                literal = True
-            elif line.startswith("}}}"):
-                self.blocks.append(["}}}"])
-                self.blocks.append([])
-                literal = False
+        self.blocks = []
+        block, params, lines = None, None, []
+        for line in markup.splitlines(True):
+            if block in (PREFORMATTED, PREFORMATTED_CODE):
+                end_of_preformatted = END_OF_PREFORMATTED.match(line)
+                if end_of_preformatted:
+                    self._append_block(block, params, lines)
+                    block, params, lines = None, None, []
+                else:
+                    lines.append(line)
             else:
-                if literal:
-                    if self.blocks[-1]:
-                        self.blocks[-1][-1] += raw_line
+                line = line.strip()
+                heading = HEADING.match(line)
+                horizontal_rule = HORIZONTAL_RULE.match(line)
+                ordered_list = ORDERED_LIST.match(line)
+                preformatted = PREFORMATTED.match(line)
+                preformatted_code = PREFORMATTED_CODE.match(line)
+                unordered_list = UNORDERED_LIST.match(line)
+                if heading:
+                    self._append_block(block, params, lines)
+                    block, params, lines = None, None, []
+                    self.blocks.append((HEADING, len(heading.group(1)), [heading.group(2)]))
+                elif horizontal_rule:
+                    self._append_block(block, params, lines)
+                    block, params, lines = None, None, []
+                    self.blocks.append((HORIZONTAL_RULE, None, None))
+                elif ordered_list:
+                    if block is ORDERED_LIST:
+                        params.append(len(ordered_list.group(1)))
+                        lines.append(ordered_list.group(2))
                     else:
-                        self.blocks[-1].append(raw_line)
-                elif line:
-                    self.blocks[-1].append(line)
+                        self._append_block(block, params, lines)
+                        block, params, lines = ORDERED_LIST, [len(ordered_list.group(1))], [ordered_list.group(2)]
+                elif preformatted:
+                    self._append_block(block, params, lines)
+                    block, params, lines = PREFORMATTED, preformatted.group(2).split(), []
+                elif preformatted_code:
+                    self._append_block(block, params, lines)
+                    block, params, lines = PREFORMATTED_CODE, preformatted_code.group(2).split(), []
+                elif unordered_list:
+                    if block is UNORDERED_LIST:
+                        params.append(len(unordered_list.group(1)))
+                        lines.append(unordered_list.group(2))
+                    else:
+                        self._append_block(block, params, lines)
+                        block, params, lines = UNORDERED_LIST, [len(unordered_list.group(1))], [unordered_list.group(2)]
                 else:
-                    self.blocks.append([])
-        self.blocks = [" ".join(block) for block in self.blocks if block]
-        
-    def __xhtml__(self, fragment=True):
+                    if block:
+                        self._append_block(block, params, lines)
+                        block, params, lines = None, None, []
+                    if line:
+                        lines.append(line)
+                    else:
+                        if lines:
+                            self.blocks.append((block, params, lines))
+                            lines = []
+        self._append_block(block, params, lines)
+        #from pprint import pprint
+        #pprint(self.blocks)
+
+    def _append_block(self, block, params, lines):
+        if block or lines:
+            self.blocks.append((block, params, lines))
+
+    def to_xhtml(self, fragment=True):
         out = []
-        literal = False
-        for block in self.blocks:
-            if block.startswith("="):
-                for level in range(6, 0, -1):
-                    if block.startswith(HEADING[level]):
-                        out.append("<h{0}>{1}</h{0}>".format(level, block[level:]))
-                        break
-            elif block == HORIZONTAL_RULE:
-                out.append("<hr />")
-            elif block == "{{{{":
-                out.append("<pre><code>")
-                literal = True
-            elif block.startswith("{{{{"):
-                out.append('<pre class="{0}"><code>'.format(block[4:]))
-                literal = True
-            elif block.startswith("}}}}"):
-                out.append("</code></pre>")
-                literal = False
-            elif block == "{{{":
-                out.append("<pre>")
-                literal = True
-            elif block.startswith("{{{"):
-                out.append('<pre class="{0}">'.format(block[3:]))
-                literal = True
-            elif block.startswith("}}}"):
-                out.append("</pre>")
-                literal = False
-            else:
+        for i, (block, params, lines) in enumerate(self.blocks):
+            if block is None:
+                line = " ".join(lines)
+                out.append("<p>")
                 for char, entity in entities:
-                    block = block.replace(char, entity)
-                if literal:
-                    out.append(block)
+                    line = line.replace(char, entity)
+                for pattern, replacer in elements:
+                    line = pattern.sub(replacer, line)
+                out.append(line)
+                out.append("</p>")
+            elif block is HEADING:
+                out.append("<h{0}>{1}</h{0}>".format(params, "".join(lines)))
+            elif block is HORIZONTAL_RULE:
+                out.append("<hr />")
+            elif block in (PREFORMATTED, PREFORMATTED_CODE):
+                if params:
+                    out.append('<pre class="{0}">'.format(" ".join(params)))
                 else:
-                    out.append("<p>")
-                    for pattern in patterns:
-                        block = pattern[0].sub(pattern[1], block)
-                    out.append(block)
-                    out.append("</p>")
+                    out.append('<pre>')
+                if block is PREFORMATTED_CODE:
+                    out.append('<code>')
+                for line in lines:
+                    for char, entity in entities:
+                        line = line.replace(char, entity)
+                    out.append(line)
+                if block is PREFORMATTED_CODE:
+                    out.append('</code>')
+                out.append('</pre>')
+            elif block in (ORDERED_LIST, UNORDERED_LIST):
+                tag = {
+                    ORDERED_LIST: ("<ol>", "</ol>"),
+                    UNORDERED_LIST: ("<ul>", "</ul>"),
+                }[block]
+                level = 0
+                for i, line in enumerate(lines):
+                    while level > params[i]:
+                        out.append(tag[1])
+                        level -= 1
+                    while level < params[i]:
+                        out.append(tag[0])
+                        level += 1
+                    out.append('<li>')
+                    for char, entity in entities:
+                        line = line.replace(char, entity)
+                    for pattern, replacer in elements:
+                        line = pattern.sub(replacer, line)
+                    out.append(line)
+                    out.append('</li>')
+                out.append(tag[1] * level)
         if fragment:
             return "".join(out)
         else:
-            return "<html xmlns=\"http://www.w3.org/1999/xhtml\"><head></head><body>{0}</body></html>".format("".join(out))
+            return "<html xmlns=\"http://www.w3.org/1999/xhtml\"><head><style type=\"text/css\">{0}</style></head><body>{1}</body></html>".format(
+                """""",
+                "".join(out)
+            )
 
 def to_xhtml(markup, fragment=True):
-    out = Document(markup).__xhtml__(fragment)
+    out = Document(markup).to_xhtml(fragment)
     #print(out)
     return out
 
 def __test__():
-    assert to_xhtml("foo bar") == "<p>foo bar</p>"
-    assert to_xhtml("foo\nbar") == "<p>foo bar</p>"
-    assert to_xhtml("foo\n\nbar") == "<p>foo</p><p>bar</p>"
-    assert to_xhtml("foo\n\n\n\nbar") == "<p>foo</p><p>bar</p>"
-    assert to_xhtml("foo & bar") == "<p>foo &amp; bar</p>"
-    assert to_xhtml("foo 'bar'") == "<p>foo &apos;bar&apos;</p>"
-    assert to_xhtml('foo "bar"') == "<p>foo &quot;bar&quot;</p>"
-    assert to_xhtml("foo < bar") == "<p>foo &lt; bar</p>"
-    assert to_xhtml("foo > bar") == "<p>foo &gt; bar</p>"
-    assert to_xhtml("**foo** bar") == "<p><strong>foo</strong> bar</p>"
-    assert to_xhtml("foo //bar//") == "<p>foo <em>bar</em></p>"
-    assert to_xhtml("**foo** **bar**") == "<p><strong>foo</strong> <strong>bar</strong></p>"
-    assert to_xhtml("//foo// //bar//") == "<p><em>foo</em> <em>bar</em></p>"
-    assert to_xhtml("**foo** //bar//") == "<p><strong>foo</strong> <em>bar</em></p>"
-    assert to_xhtml("**//foo//** //**bar**//") == "<p><strong><em>foo</em></strong> <em><strong>bar</strong></em></p>"
-    assert to_xhtml("**foo\n\nbar") == "<p><strong>foo</strong></p><p>bar</p>"
-    assert to_xhtml("//foo\n\nbar") == "<p><em>foo</em></p><p>bar</p>"
-    assert to_xhtml("**foo\n\n**bar") == "<p><strong>foo</strong></p><p><strong>bar</strong></p>"
-    assert to_xhtml("//foo\n\n//bar") == "<p><em>foo</em></p><p><em>bar</em></p>"
-    assert to_xhtml("E=mc^^2^^") == "<p>E=mc<sup>2</sup></p>"
-    assert to_xhtml("H,,2,,SO,,4,,") == "<p>H<sub>2</sub>SO<sub>4</sub></p>"
-    assert to_xhtml("foo\n---\nbar") == "<p>foo --- bar</p>"
-    assert to_xhtml("foo\n----\nbar") == "<p>foo</p><hr /><p>bar</p>"
-    assert to_xhtml("foo\n-----\nbar") == "<p>foo</p><hr /><p>bar</p>"
-    assert to_xhtml("=foo\nbar") == "<h1>foo</h1><p>bar</p>"
-    assert to_xhtml("=foo=\nbar") == "<h1>foo</h1><p>bar</p>"
-    assert to_xhtml("= foo\nbar") == "<h1>foo</h1><p>bar</p>"
-    assert to_xhtml("= foo =\nbar") == "<h1>foo</h1><p>bar</p>"
-    assert to_xhtml("= E=mc^2 =\nfoo bar") == "<h1>E=mc^2</h1><p>foo bar</p>"
-    assert to_xhtml("==foo\nbar") == "<h2>foo</h2><p>bar</p>"
-    assert to_xhtml("==foo==\nbar") == "<h2>foo</h2><p>bar</p>"
-    assert to_xhtml("== foo\nbar") == "<h2>foo</h2><p>bar</p>"
-    assert to_xhtml("== foo ==\nbar") == "<h2>foo</h2><p>bar</p>"
-    assert to_xhtml("== E=mc^2 ==\nfoo bar") == "<h2>E=mc^2</h2><p>foo bar</p>"
-    assert to_xhtml("=== foo\nbar") == "<h3>foo</h3><p>bar</p>"
-    assert to_xhtml("=== foo ===\nbar") == "<h3>foo</h3><p>bar</p>"
-    assert to_xhtml("==== foo\nbar") == "<h4>foo</h4><p>bar</p>"
-    assert to_xhtml("==== foo ====\nbar") == "<h4>foo</h4><p>bar</p>"
-    assert to_xhtml("===== foo\nbar") == "<h5>foo</h5><p>bar</p>"
-    assert to_xhtml("===== foo =====\nbar") == "<h5>foo</h5><p>bar</p>"
-    assert to_xhtml("====== foo\nbar") == "<h6>foo</h6><p>bar</p>"
-    assert to_xhtml("====== foo ======\nbar") == "<h6>foo</h6><p>bar</p>"
-    assert to_xhtml("======= foo\nbar") == "<h6>foo</h6><p>bar</p>"
-    assert to_xhtml("======= foo =======\nbar") == "<h6>foo</h6><p>bar</p>"
-    assert to_xhtml("=== foo ======\nbar") == "<h3>foo</h3><p>bar</p>"
-    assert to_xhtml("====== foo ===\nbar") == "<h6>foo</h6><p>bar</p>"
+    import json
+    import os
+    test_dir = os.path.join(os.path.dirname(__file__), "..", "..", "test")
+    for file_name in os.listdir(test_dir):
+        file_name = os.path.join(test_dir, file_name)
+        if os.path.isfile(file_name):
+            print(file_name)
+            file = open(file_name)
+            for line in file:
+                line = line.strip()
+                values = map(json.loads, line.split("\t"))
+                print("    " + " -> ".join(map(json.dumps, values)))
+                if values:
+                    actual = Document(values[0]).to_xhtml()
+                    try:
+                        assert actual == values[1]
+                    except AssertionError:
+                        raise AssertionError("Processing {0} resulted in {1} instead of expected {2}".format(
+                            json.dumps(values[0]), json.dumps(actual), json.dumps(values[1])
+                        ))
+            file.close()
 
 if __name__ == "__main__":
-    for arg in sys.argv[1:]:
-        if arg.startswith("-"):
-            if arg in ("-t", "--test"):
-                __test__()
-        else:
-            f = open(arg)
-            try:
-                print(to_xhtml(f.read(), fragment=False))
-            finally:
-                f.close()
-
+    import sys
+    args = sys.argv[1:]
+    if args:
+        for arg in args:
+            file = open(arg)
+            print(to_xhtml(file.read(), fragment=False))
+            file.close()
+    else:
+        __test__()
