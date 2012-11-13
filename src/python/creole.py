@@ -14,15 +14,20 @@ UNORDERED_LIST = re.compile(r"^(\*+)\s*(.*)")
 
 END_OF_PREFORMATTED = re.compile(r"^\s*(\}\}\})")
 
-entities = [
-    ("&", "&amp;"),
-    ("'", "&apos;"),
-    ('"', "&quot;"),
-    ("<", "&lt;"),
-    (">", "&gt;"),
-]
-
-
+def replace_xhtml_entities(s):
+    chars = list(s)
+    for i, ch in enumerate(chars):
+        if ch == "&":
+            chars[i] = "&amp;"
+        elif ch == "'":
+            chars[i] = "&apos;"
+        elif ch == "\"":
+            chars[i] = "&quot;"
+        elif ch == "<":
+            chars[i] = "&lt;"
+        elif ch == ">":
+            chars[i] = "&gt;"
+    return "".join(chars)
 
 elements = [
     (   re.compile(r"\\\\"),
@@ -66,7 +71,7 @@ elements = [
     ),
 ]
 
-class Document(object):
+class CreoleDocument(object):
 
     def __init__(self, markup):
         self.blocks = []
@@ -139,14 +144,14 @@ class Document(object):
             if block is None:
                 line = " ".join(lines)
                 out.append("<p>")
-                for char, entity in entities:
-                    line = line.replace(char, entity)
+                line = replace_xhtml_entities(line)
                 for pattern, replacer in elements:
                     line = pattern.sub(replacer, line)
                 out.append(line)
                 out.append("</p>")
             elif block is HEADING:
-                out.append("<h{0}>{1}</h{0}>".format(params, "".join(lines)))
+                line = replace_xhtml_entities("".join(lines))
+                out.append("<h{0}>{1}</h{0}>".format(params, line))
             elif block is HORIZONTAL_RULE:
                 out.append("<hr />")
             elif block in (PREFORMATTED, PREFORMATTED_CODE):
@@ -157,33 +162,31 @@ class Document(object):
                 if block is PREFORMATTED_CODE:
                     out.append('<code>')
                 for line in lines:
-                    for char, entity in entities:
-                        line = line.replace(char, entity)
+                    line = replace_xhtml_entities(line)
                     out.append(line)
                 if block is PREFORMATTED_CODE:
                     out.append('</code>')
                 out.append('</pre>')
             elif block in (ORDERED_LIST, UNORDERED_LIST):
-                tag = {
-                    ORDERED_LIST: ("<ol>", "</ol>"),
-                    UNORDERED_LIST: ("<ul>", "</ul>"),
-                }[block]
+                if block is ORDERED_LIST:
+                    start_tag, end_tag = "<ol>", "</ol>"
+                else:
+                    start_tag, end_tag = "<ul>", "</ul>"
                 level = 0
                 for i, line in enumerate(lines):
                     while level > params[i]:
-                        out.append(tag[1])
+                        out.append(end_tag)
                         level -= 1
                     while level < params[i]:
-                        out.append(tag[0])
+                        out.append(start_tag)
                         level += 1
                     out.append('<li>')
-                    for char, entity in entities:
-                        line = line.replace(char, entity)
+                    line = replace_xhtml_entities(line)
                     for pattern, replacer in elements:
                         line = pattern.sub(replacer, line)
                     out.append(line)
                     out.append('</li>')
-                out.append(tag[1] * level)
+                out.append(end_tag * level)
         if fragment:
             return "".join(out)
         else:
@@ -193,7 +196,7 @@ class Document(object):
             )
 
 def to_xhtml(markup, fragment=True):
-    out = Document(markup).to_xhtml(fragment)
+    out = CreoleDocument(markup).to_xhtml(fragment)
     #print(out)
     return out
 
@@ -211,7 +214,7 @@ def __test__():
                 values = map(json.loads, line.split("\t"))
                 print("    " + " -> ".join(map(json.dumps, values)))
                 if values:
-                    actual = Document(values[0]).to_xhtml()
+                    actual = CreoleDocument(values[0]).to_xhtml()
                     try:
                         assert actual == values[1]
                     except AssertionError:
