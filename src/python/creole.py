@@ -5,36 +5,20 @@ from __future__ import print_function
 
 import re
 
+from html import HTMLOutputStream
+
 HEADING = re.compile(r"^(={1,6})\s*(.*[^=\s])\s*=*")
 HORIZONTAL_RULE = re.compile(r"^(-{4})")
 ORDERED_LIST = re.compile(r"^(#+)\s*(.*)")
-PREFORMATTED = re.compile(r"^(\{\{\{)(?!\{)\s*([-\s\w]*)", re.UNICODE)
-PREFORMATTED_CODE = re.compile(r"^(\{\{\{\{)(?!\{)\s*([-\s\w]*)", re.UNICODE)
+PREFORMATTED = re.compile(r"^(\{\{\{)\s*([-\s\w]*)", re.UNICODE)
+BLOCK_CODE = re.compile(r"^(```)\s*([-\s\w]*)", re.UNICODE)
 UNORDERED_LIST = re.compile(r"^(\*+)\s*(.*)")
 
 END_OF_PREFORMATTED = re.compile(r"^\s*(\}\}\})")
 
-def replace_xhtml_entities(s):
-    chars = list(s)
-    for i, ch in enumerate(chars):
-        if ch == "&":
-            chars[i] = "&amp;"
-        elif ch == "'":
-            chars[i] = "&apos;"
-        elif ch == "\"":
-            chars[i] = "&quot;"
-        elif ch == "<":
-            chars[i] = "&lt;"
-        elif ch == ">":
-            chars[i] = "&gt;"
-    return "".join(chars)
-
 elements = [
     (   re.compile(r"\\\\"),
         lambda match: "<br />"
-    ),
-    (   re.compile(r"\{\{\{\{(.*?)(\}\}\}\})"),
-        lambda match: "<code>{0}</code>".format(*match.groups())
     ),
     (   re.compile(r"\{\{\{(.*?)(\}\}\})"),
         lambda match: "<tt>{0}</tt>".format(*match.groups()) # WRONG! should be nowiki
@@ -45,9 +29,9 @@ elements = [
     (   re.compile(r"\{\{([^\|]*?)\|([^\|]*?)(\}\}|$)"),
         lambda match: "<img src=\"{0}\" alt=\"{1}\" />".format(*match.groups())
     ),
-    # monospace
-    (   re.compile(r"##(.*?)(##|$)"),
-        lambda match: "<tt>{0}</tt>".format(*match.groups())
+    # code
+    (   re.compile(r"``(.*?)(``|$)"),
+        lambda match: "<code>{0}</code>".format(*match.groups())
     ),
     (   re.compile(r"\*\*(.*?)(\*\*|$)"),
         lambda match: "<strong>{0}</strong>".format(*match.groups())
@@ -71,13 +55,128 @@ elements = [
     ),
 ]
 
+def xhtml_entities(s):
+    chars = list(s)
+    for i, ch in enumerate(chars):
+        if ch == "&":
+            chars[i] = "&amp;"
+        elif ch == "'":
+            chars[i] = "&apos;"
+        elif ch == "\"":
+            chars[i] = "&quot;"
+        elif ch == "<":
+            chars[i] = "&lt;"
+        elif ch == ">":
+            chars[i] = "&gt;"
+    return "".join(chars)
+
+
+
+class CreoleLine(object):
+
+    def __init__(self, markup):
+        special = ["\\\\", "{{{", "}}}", "{{", "}}", "``", '""',
+                   "**", "//", "^^", ",,", "[[", "]]", "|"]
+        firsts = set(seq[0] for seq in special)
+        self.tokens = []
+        p, q = 0, 0
+        while q < len(markup):
+            if markup[q] in firsts:
+                for seq in special:
+                    r = q + len(seq)
+                    if markup[q:r] == seq:
+                        if q > p:
+                            self.tokens.append(markup[p:q])
+                        self.tokens.append(markup[q:r])
+                        p, q = r, r
+                        break
+                else:
+                    q += 1
+            else:
+                q += 1
+        if q > p:
+            self.tokens.append(markup[p:q])
+
+    def to_html(self):
+
+        def code(out, markup):
+            out.start_tag("code")
+            out.write(markup)
+            out.end_tag("code")
+
+        def image(out, markup):
+            src, alt = markup.partition("|")[0::2]
+            if alt:
+                out.start_tag("img", {"src": src, "alt": alt}, void=True)
+            else:
+                out.start_tag("img", {"src": src}, void=True)
+
+        toggle_tokens = {
+            "//": "em",
+            '""': "q",
+            "**": "strong",
+            ",,": "sub",
+            "^^": "sup",
+        }
+        bracket_tokens = {
+            "``" : ("``", code),
+            "{{" : ("}}", image),
+            "{{{": ("}}}", lambda out, markup: out.write(markup)),
+        }
+
+        out = HTMLOutputStream()
+        tokens = self.tokens[:]
+        while tokens:
+            token = tokens.pop(0)
+            if token == "\\\\":
+                out.start_tag("br", void=True)
+            elif token in toggle_tokens:
+                tag = toggle_tokens[token]
+                if tag in out.stack:
+                    out.end_tag(tag)
+                else:
+                    out.start_tag(tag)
+            elif token in bracket_tokens:
+                end_token, writer = bracket_tokens[token]
+                markup = []
+                while tokens:
+                    token = tokens.pop(0)
+                    if token == end_token:
+                        break
+                    else:
+                        markup.append(token)
+                writer(out, "".join(markup))
+            elif token == "[[":
+                href = []
+                while tokens:
+                    token = tokens.pop(0)
+                    if token in ("|", "]]"):
+                        break
+                    else:
+                        href.append(token)
+                href = "".join(href)
+                out.start_tag("a", {"href": href})
+                if token != "|":
+                    out.write(href)
+                    out.end_tag("a")
+            elif token == "]]":
+                try:
+                    out.end_tag("a")
+                except ValueError:
+                    out.write(token)
+            else:
+                out.write(token)
+        out.close()
+        return str(out)
+
+
 class CreoleDocument(object):
 
     def __init__(self, markup):
         self.blocks = []
         block, params, lines = None, None, []
         for line in markup.splitlines(True):
-            if block in (PREFORMATTED, PREFORMATTED_CODE):
+            if block in (PREFORMATTED, BLOCK_CODE):
                 end_of_preformatted = END_OF_PREFORMATTED.match(line)
                 if end_of_preformatted:
                     self._append_block(block, params, lines)
@@ -90,7 +189,7 @@ class CreoleDocument(object):
                 horizontal_rule = HORIZONTAL_RULE.match(line)
                 ordered_list = ORDERED_LIST.match(line)
                 preformatted = PREFORMATTED.match(line)
-                preformatted_code = PREFORMATTED_CODE.match(line)
+                block_code = BLOCK_CODE.match(line)
                 unordered_list = UNORDERED_LIST.match(line)
                 if heading:
                     self._append_block(block, params, lines)
@@ -110,9 +209,9 @@ class CreoleDocument(object):
                 elif preformatted:
                     self._append_block(block, params, lines)
                     block, params, lines = PREFORMATTED, preformatted.group(2).split(), []
-                elif preformatted_code:
+                elif block_code:
                     self._append_block(block, params, lines)
-                    block, params, lines = PREFORMATTED_CODE, preformatted_code.group(2).split(), []
+                    block, params, lines = BLOCK_CODE, block_code.group(2).split(), []
                 elif unordered_list:
                     if block is UNORDERED_LIST:
                         params.append(len(unordered_list.group(1)))
@@ -144,29 +243,34 @@ class CreoleDocument(object):
             if block is None:
                 line = " ".join(lines)
                 out.append("<p>")
-                line = replace_xhtml_entities(line)
+                line = xhtml_entities(line)
                 for pattern, replacer in elements:
                     line = pattern.sub(replacer, line)
                 out.append(line)
                 out.append("</p>")
             elif block is HEADING:
-                line = replace_xhtml_entities("".join(lines))
+                line = xhtml_entities("".join(lines))
                 out.append("<h{0}>{1}</h{0}>".format(params, line))
             elif block is HORIZONTAL_RULE:
                 out.append("<hr />")
-            elif block in (PREFORMATTED, PREFORMATTED_CODE):
+            elif block is PREFORMATTED:
                 if params:
                     out.append('<pre class="{0}">'.format(" ".join(params)))
                 else:
                     out.append('<pre>')
-                if block is PREFORMATTED_CODE:
-                    out.append('<code>')
                 for line in lines:
-                    line = replace_xhtml_entities(line)
+                    line = xhtml_entities(line)
                     out.append(line)
-                if block is PREFORMATTED_CODE:
-                    out.append('</code>')
                 out.append('</pre>')
+            elif block is BLOCK_CODE:
+                if params:
+                    out.append('<pre class="{0}"><code>'.format(" ".join(params)))
+                else:
+                    out.append('<pre><code>')
+                for line in lines:
+                    line = xhtml_entities(line)
+                    out.append(line)
+                out.append('</code></pre>')
             elif block in (ORDERED_LIST, UNORDERED_LIST):
                 if block is ORDERED_LIST:
                     start_tag, end_tag = "<ol>", "</ol>"
@@ -181,7 +285,7 @@ class CreoleDocument(object):
                         out.append(start_tag)
                         level += 1
                     out.append('<li>')
-                    line = replace_xhtml_entities(line)
+                    line = xhtml_entities(line)
                     for pattern, replacer in elements:
                         line = pattern.sub(replacer, line)
                     out.append(line)

@@ -23,3 +23,5 @@
 "foo\n---\nbar"	"<p>foo --- bar</p>"
 "foo\n----\nbar"	"<p>foo</p><hr /><p>bar</p>"
 "foo\n-----\nbar"	"<p>foo</p><hr /><p>bar</p>"
+"Here is some code: ``print \"hello, world\"``"	"<p>Here is some code: <code>print &quot;hello, world&quot;</code></p>"
+"Here is some more code: ``print 2 ** 3``"	"<p>Here is some more code: <code>print 2 ** 3</code></p>"
