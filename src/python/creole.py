@@ -104,7 +104,7 @@ class HTMLOutputStream(object):
 class CreoleLine(object):
 
     special_tokens = [
-        "~", "http://", "ftp://",
+        "~", "http://", "https://", "ftp://", "mailto:",
         "\\\\", "{{{", "}}}", "{{", "}}", "``", '""',
         "**", "//", "^^", ",,", "[[", "]]", "|"
     ]
