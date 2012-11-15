@@ -281,23 +281,15 @@ class Markup(object):
                 out.element("h" + str(params), text="".join(lines))
             elif block is HORIZONTAL_RULE:
                 out.tag("hr")
-            elif block is PREFORMATTED:
+            elif block in (PREFORMATTED, BLOCK_CODE):
                 if params:
                     out.start_tag("pre", {"class": " ".join(params)})
                 else:
                     out.start_tag("pre")
+                if block is BLOCK_CODE:
+                    out.start_tag("code")
                 for line in lines:
                     out.write_text(line)
-                out.end_tag("pre")
-            elif block is BLOCK_CODE:
-                if params:
-                    out.start_tag("pre", {"class": " ".join(params)})
-                else:
-                    out.start_tag("pre")
-                out.start_tag("code")
-                for line in lines:
-                    out.write_text(line)
-                out.end_tag("code")
                 out.end_tag("pre")
             elif block in (ORDERED_LIST, UNORDERED_LIST):
                 if block is ORDERED_LIST:
