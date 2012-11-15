@@ -102,27 +102,26 @@ class HTMLOutputStream(object):
             self.tokens.append("</{0}>".format(t))
 
 
-class InlineMarkup(object):
+class Tokeniser(object):
 
-    special_tokens = [
-        "~", "http://", "https://", "ftp://", "mailto:",
-        "\\\\", "{{{", "}}}", "{{", "}}", "``", '""',
-        "**", "//", "^^", ",,", "[[", "]]", "|"
-    ]
-    special_chars = list(set(seq[0] for seq in special_tokens))
+    def __init__(self, escape, *markers):
+        self.escape = escape
+        self.markers = [self.escape]
+        self.markers.extend(markers)
+        self.marker_chars = list(set(marker[0] for marker in self.markers))
 
-    def __init__(self, markup=None):
+    def tokenise(self, markup):
         self.tokens = []
         p, q = 0, 0
         while q < len(markup):
-            if markup[q] in InlineMarkup.special_chars:
-                start = q + 1 if markup[q] == "~" else q
-                for seq in InlineMarkup.special_tokens:
+            if markup[q] in self.marker_chars:
+                start = q + len(self.escape) if markup[q] == self.escape else q
+                for seq in self.markers:
                     end = start + len(seq)
                     if markup[start:end] == seq:
                         if q > p:
-                            self.tokens.append(markup[p:q])
-                        self.tokens.append(markup[q:end])
+                            yield markup[p:q]
+                        yield markup[q:end]
                         p, q = end, end
                         break
                 else:
@@ -130,7 +129,18 @@ class InlineMarkup(object):
             else:
                 q += 1
         if q > p:
-            self.tokens.append(markup[p:q])
+            yield markup[p:q]
+
+
+class InlineMarkup(object):
+
+    def __init__(self, markup=None):
+        tokeniser = Tokeniser("~",
+            "http://", "https://", "ftp://", "mailto:",
+            "\\\\", "{{{", "}}}", "{{", "}}", "``", '""',
+            "**", "//", "^^", ",,", "[[", "]]", "|"
+        )
+        self.tokens = list(tokeniser.tokenise(markup))
 
     def to_html(self):
 
