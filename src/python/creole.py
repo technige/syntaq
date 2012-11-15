@@ -5,90 +5,124 @@ from __future__ import print_function
 
 import re
 
-from html import HTMLOutputStream
 
 HEADING = re.compile(r"^(={1,6})\s*(.*[^=\s])\s*=*")
 HORIZONTAL_RULE = re.compile(r"^(-{4})")
 ORDERED_LIST = re.compile(r"^(#+)\s*(.*)")
-PREFORMATTED = re.compile(r"^(\{\{\{)\s*([-\s\w]*)", re.UNICODE)
-BLOCK_CODE = re.compile(r"^(```)\s*([-\s\w]*)", re.UNICODE)
+PREFORMATTED = re.compile(r"^(\{\{\{)\s*([-:\s\w]*)", re.UNICODE)
+BLOCK_CODE = re.compile(r"^(```)\s*([-:\s\w]*)", re.UNICODE)
 UNORDERED_LIST = re.compile(r"^(\*+)\s*(.*)")
 
 END_OF_PREFORMATTED = re.compile(r"^\s*(\}\}\})")
+END_OF_BLOCK_CODE = re.compile(r"^\s*(```)")
 
-elements = [
-    (   re.compile(r"\\\\"),
-        lambda match: "<br />"
-    ),
-    (   re.compile(r"\{\{\{(.*?)(\}\}\})"),
-        lambda match: "<tt>{0}</tt>".format(*match.groups()) # WRONG! should be nowiki
-    ),
-    (   re.compile(r"\{\{([^\|]*?)(\}\}|$)"),
-        lambda match: "<img src=\"{0}\" />".format(*match.groups())
-    ),
-    (   re.compile(r"\{\{([^\|]*?)\|([^\|]*?)(\}\}|$)"),
-        lambda match: "<img src=\"{0}\" alt=\"{1}\" />".format(*match.groups())
-    ),
-    # code
-    (   re.compile(r"``(.*?)(``|$)"),
-        lambda match: "<code>{0}</code>".format(*match.groups())
-    ),
-    (   re.compile(r"\*\*(.*?)(\*\*|$)"),
-        lambda match: "<strong>{0}</strong>".format(*match.groups())
-    ),
-    (   re.compile(r"(?<!:)//(.*?)(?<!:)(//|$)"),
-        lambda match: "<em>{0}</em>".format(*match.groups())
-    ),
-    # superscript, e.g. "E=mc^^2^^"
-    (   re.compile(r"\^\^(.*?)(\^\^|$)"),
-        lambda match: "<sup>{0}</sup>".format(*match.groups())
-    ),
-    # subscript, e.g. "H,,2,,SO,,4,,"
-    (   re.compile(r",,(.*?)(,,|$)"),
-        lambda match: "<sub>{0}</sub>".format(*match.groups())
-    ),
-    (   re.compile(r"\[\[([^\|]*?)(\]\]|$)"),
-        lambda match: '<a href="{0}">{0}</a>'.format(*match.groups())
-    ),
-    (   re.compile(r"\[\[([^\|]*?)\|([^\|]*?)(\]\]|$)"),
-        lambda match: '<a href="{0}">{1}</a>'.format(*match.groups())
-    ),
-]
 
-def xhtml_entities(s):
-    chars = list(s)
-    for i, ch in enumerate(chars):
-        if ch == "&":
-            chars[i] = "&amp;"
-        elif ch == "'":
-            chars[i] = "&apos;"
-        elif ch == "\"":
-            chars[i] = "&quot;"
-        elif ch == "<":
-            chars[i] = "&lt;"
-        elif ch == ">":
-            chars[i] = "&gt;"
-    return "".join(chars)
+class HTML(object):
 
+    @staticmethod
+    def entities(text):
+        chars = list(text)
+        for i, ch in enumerate(chars):
+            if ch == "&":
+                chars[i] = "&amp;"
+            elif ch == "'":
+                chars[i] = "&apos;"
+            elif ch == "\"":
+                chars[i] = "&quot;"
+            elif ch == "<":
+                chars[i] = "&lt;"
+            elif ch == ">":
+                chars[i] = "&gt;"
+        return "".join(chars)
+
+
+class HTMLOutputStream(object):
+
+    def __init__(self):
+        self.tokens = []
+        self.stack = []
+
+    def __str__(self):
+        return "".join(self.tokens)
+
+    def __repr__(self):
+        return str(self)
+
+    def write_html(self, html):
+        self.tokens.append(html)
+
+    def write_text(self, text):
+        self.tokens.extend(HTML.entities(text))
+
+    def tag(self, tag, attributes=None):
+        if attributes:
+            self.tokens.append("<{0} {1}>".format(
+                tag,
+                " ".join(
+                    '{0}="{1}"'.format(key, HTML.entities(value))
+                    for key, value in attributes.items()
+                    if value is not None
+                )
+            ))
+        else:
+            self.tokens.append("<{0}>".format(tag))
+
+    def start_tag(self, tag, attributes=None, void=False):
+        self.tag(tag, attributes)
+        if not void:
+            self.stack.append(tag)
+
+    def end_tag(self, tag=None):
+        if not self.stack:
+            raise ValueError("No tags to close")
+        if not tag:
+            tag = self.stack[-1]
+        if tag not in self.stack:
+            raise ValueError("End tag </{0}> should have corresponding start tag <{0}>".format(tag))
+        while True:
+            t = self.stack.pop()
+            self.tokens.append("</{0}>".format(t))
+            if t == tag:
+                break
+
+    def element(self, tag, attributes=None, text=None, html=None):
+        if text and html:
+            raise ValueError("Cannot specify both text and html content")
+        self.start_tag(tag, attributes)
+        if text:
+            self.write_text(text)
+        if html:
+            self.write_html(html)
+        self.end_tag()
+
+    def close(self):
+        while self.stack:
+            t = self.stack.pop()
+            self.tokens.append("</{0}>".format(t))
 
 
 class CreoleLine(object):
 
-    def __init__(self, markup):
-        special = ["\\\\", "{{{", "}}}", "{{", "}}", "``", '""',
-                   "**", "//", "^^", ",,", "[[", "]]", "|"]
-        firsts = set(seq[0] for seq in special)
+    special_tokens = [
+        "~", "http://", "ftp://",
+        "\\\\", "{{{", "}}}", "{{", "}}", "``", '""',
+        "**", "//", "^^", ",,", "[[", "]]", "|"
+    ]
+    special_chars = list(set(seq[0] for seq in special_tokens))
+
+    def __init__(self, markup=None):
         self.tokens = []
         p, q = 0, 0
         while q < len(markup):
-            if markup[q] in firsts:
-                for seq in special:
-                    r = q + len(seq)
-                    if markup[q:r] == seq:
+            if markup[q] in CreoleLine.special_chars:
+                start = q + 1 if markup[q] == "~" else q
+                for seq in CreoleLine.special_tokens:
+                    end = start + len(seq)
+                    if markup[start:end] == seq:
                         if q > p:
                             self.tokens.append(markup[p:q])
-                        self.tokens.append(markup[q:r])
-                        p, q = r, r
+                        self.tokens.append(markup[q:end])
+                        p, q = end, end
                         break
                 else:
                     q += 1
@@ -99,17 +133,9 @@ class CreoleLine(object):
 
     def to_html(self):
 
-        def code(out, markup):
-            out.start_tag("code")
-            out.write(markup)
-            out.end_tag("code")
-
         def image(out, markup):
             src, alt = markup.partition("|")[0::2]
-            if alt:
-                out.start_tag("img", {"src": src, "alt": alt}, void=True)
-            else:
-                out.start_tag("img", {"src": src}, void=True)
+            out.tag("img", {"src": src, "alt": alt or None})
 
         toggle_tokens = {
             "//": "em",
@@ -119,17 +145,19 @@ class CreoleLine(object):
             "^^": "sup",
         }
         bracket_tokens = {
-            "``" : ("``", code),
+            "``" : ("``", lambda out, markup: out.element("code", text=markup)),
             "{{" : ("}}", image),
-            "{{{": ("}}}", lambda out, markup: out.write(markup)),
+            "{{{": ("}}}", lambda out, markup: out.write_text(markup)),
         }
 
         out = HTMLOutputStream()
         tokens = self.tokens[:]
         while tokens:
             token = tokens.pop(0)
-            if token == "\\\\":
-                out.start_tag("br", void=True)
+            if token[0] == "~":
+                out.write_text(token[1:])
+            elif token == "\\\\":
+                out.tag("br")
             elif token in toggle_tokens:
                 tag = toggle_tokens[token]
                 if tag in out.stack:
@@ -157,15 +185,15 @@ class CreoleLine(object):
                 href = "".join(href)
                 out.start_tag("a", {"href": href})
                 if token != "|":
-                    out.write(href)
+                    out.write_text(href)
                     out.end_tag("a")
             elif token == "]]":
                 try:
                     out.end_tag("a")
                 except ValueError:
-                    out.write(token)
+                    out.write_text(token)
             else:
-                out.write(token)
+                out.write_text(token)
         out.close()
         return str(out)
 
@@ -176,9 +204,16 @@ class CreoleDocument(object):
         self.blocks = []
         block, params, lines = None, None, []
         for line in markup.splitlines(True):
-            if block in (PREFORMATTED, BLOCK_CODE):
-                end_of_preformatted = END_OF_PREFORMATTED.match(line)
-                if end_of_preformatted:
+            if block is PREFORMATTED:
+                at_end = END_OF_PREFORMATTED.match(line)
+                if at_end:
+                    self._append_block(block, params, lines)
+                    block, params, lines = None, None, []
+                else:
+                    lines.append(line)
+            elif block is BLOCK_CODE:
+                at_end = END_OF_BLOCK_CODE.match(line)
+                if at_end:
                     self._append_block(block, params, lines)
                     block, params, lines = None, None, []
                 else:
@@ -237,70 +272,53 @@ class CreoleDocument(object):
         if block or lines:
             self.blocks.append((block, params, lines))
 
-    def to_xhtml(self, fragment=True):
-        out = []
+    def to_html(self):
+        out = HTMLOutputStream()
         for i, (block, params, lines) in enumerate(self.blocks):
             if block is None:
-                line = " ".join(lines)
-                out.append("<p>")
-                line = xhtml_entities(line)
-                for pattern, replacer in elements:
-                    line = pattern.sub(replacer, line)
-                out.append(line)
-                out.append("</p>")
+                out.element("p", html=CreoleLine(" ".join(lines)).to_html())
             elif block is HEADING:
-                line = xhtml_entities("".join(lines))
-                out.append("<h{0}>{1}</h{0}>".format(params, line))
+                out.element("h" + str(params), text="".join(lines))
             elif block is HORIZONTAL_RULE:
-                out.append("<hr />")
+                out.tag("hr")
             elif block is PREFORMATTED:
                 if params:
-                    out.append('<pre class="{0}">'.format(" ".join(params)))
+                    out.start_tag("pre", {"class": " ".join(params)})
                 else:
-                    out.append('<pre>')
+                    out.start_tag("pre")
                 for line in lines:
-                    line = xhtml_entities(line)
-                    out.append(line)
-                out.append('</pre>')
+                    out.write_text(line)
+                out.end_tag("pre")
             elif block is BLOCK_CODE:
                 if params:
-                    out.append('<pre class="{0}"><code>'.format(" ".join(params)))
+                    out.start_tag("pre", {"class": " ".join(params)})
                 else:
-                    out.append('<pre><code>')
+                    out.start_tag("pre")
+                out.start_tag("code")
                 for line in lines:
-                    line = xhtml_entities(line)
-                    out.append(line)
-                out.append('</code></pre>')
+                    out.write_text(line)
+                out.end_tag("code")
+                out.end_tag("pre")
             elif block in (ORDERED_LIST, UNORDERED_LIST):
                 if block is ORDERED_LIST:
-                    start_tag, end_tag = "<ol>", "</ol>"
+                    tag = "ol"
                 else:
-                    start_tag, end_tag = "<ul>", "</ul>"
+                    tag = "ul"
                 level = 0
                 for i, line in enumerate(lines):
                     while level > params[i]:
-                        out.append(end_tag)
+                        out.end_tag(tag)
                         level -= 1
                     while level < params[i]:
-                        out.append(start_tag)
+                        out.start_tag(tag)
                         level += 1
-                    out.append('<li>')
-                    line = xhtml_entities(line)
-                    for pattern, replacer in elements:
-                        line = pattern.sub(replacer, line)
-                    out.append(line)
-                    out.append('</li>')
-                out.append(end_tag * level)
-        if fragment:
-            return "".join(out)
-        else:
-            return "<html xmlns=\"http://www.w3.org/1999/xhtml\"><head><style type=\"text/css\">{0}</style></head><body>{1}</body></html>".format(
-                """""",
-                "".join(out)
-            )
+                    out.element("li", html=CreoleLine(line).to_html())
+                for i in range(level):
+                    out.end_tag(tag)
+        return str(out)
 
-def to_xhtml(markup, fragment=True):
-    out = CreoleDocument(markup).to_xhtml(fragment)
+def to_html(markup):
+    out = CreoleDocument(markup).to_html()
     #print(out)
     return out
 
@@ -310,7 +328,7 @@ def __test__():
     test_dir = os.path.join(os.path.dirname(__file__), "..", "..", "test")
     for file_name in os.listdir(test_dir):
         file_name = os.path.join(test_dir, file_name)
-        if os.path.isfile(file_name):
+        if os.path.isfile(file_name) and file_name.endswith(".tsv"):
             print(file_name)
             file = open(file_name)
             for line in file:
@@ -318,7 +336,7 @@ def __test__():
                 values = map(json.loads, line.split("\t"))
                 print("    " + " -> ".join(map(json.dumps, values)))
                 if values:
-                    actual = CreoleDocument(values[0]).to_xhtml()
+                    actual = CreoleDocument(values[0]).to_html()
                     try:
                         assert actual == values[1]
                     except AssertionError:
@@ -333,7 +351,7 @@ if __name__ == "__main__":
     if args:
         for arg in args:
             file = open(arg)
-            print(to_xhtml(file.read(), fragment=False))
+            print(to_html(file.read()))
             file.close()
     else:
         __test__()
