@@ -101,7 +101,7 @@ class HTMLOutputStream(object):
             self.tokens.append("</{0}>".format(t))
 
 
-class CreoleLine(object):
+class InlineMarkup(object):
 
     special_tokens = [
         "~", "http://", "https://", "ftp://", "mailto:",
@@ -114,9 +114,9 @@ class CreoleLine(object):
         self.tokens = []
         p, q = 0, 0
         while q < len(markup):
-            if markup[q] in CreoleLine.special_chars:
+            if markup[q] in InlineMarkup.special_chars:
                 start = q + 1 if markup[q] == "~" else q
-                for seq in CreoleLine.special_tokens:
+                for seq in InlineMarkup.special_tokens:
                     end = start + len(seq)
                     if markup[start:end] == seq:
                         if q > p:
@@ -198,7 +198,7 @@ class CreoleLine(object):
         return str(out)
 
 
-class CreoleDocument(object):
+class Markup(object):
 
     def __init__(self, markup):
         self.blocks = []
@@ -276,7 +276,7 @@ class CreoleDocument(object):
         out = HTMLOutputStream()
         for i, (block, params, lines) in enumerate(self.blocks):
             if block is None:
-                out.element("p", html=CreoleLine(" ".join(lines)).to_html())
+                out.element("p", html=InlineMarkup(" ".join(lines)).to_html())
             elif block is HEADING:
                 out.element("h" + str(params), text="".join(lines))
             elif block is HORIZONTAL_RULE:
@@ -312,13 +312,13 @@ class CreoleDocument(object):
                     while level < params[i]:
                         out.start_tag(tag)
                         level += 1
-                    out.element("li", html=CreoleLine(line).to_html())
+                    out.element("li", html=InlineMarkup(line).to_html())
                 for i in range(level):
                     out.end_tag(tag)
         return str(out)
 
 def to_html(markup):
-    out = CreoleDocument(markup).to_html()
+    out = Markup(markup).to_html()
     #print(out)
     return out
 
@@ -336,7 +336,7 @@ def __test__():
                 values = map(json.loads, line.split("\t"))
                 print("    " + " -> ".join(map(json.dumps, values)))
                 if values:
-                    actual = CreoleDocument(values[0]).to_html()
+                    actual = Markup(values[0]).to_html()
                     try:
                         assert actual == values[1]
                     except AssertionError:

@@ -3,7 +3,7 @@
 
 import unittest
 
-from creole import HTMLOutputStream
+from syntaq import HTMLOutputStream
 
 
 class HTMLOutputStreamTester(unittest.TestCase):

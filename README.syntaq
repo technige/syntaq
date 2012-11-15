@@ -1,0 +1,21 @@
+= Syntaq
+
+Syntaq is a lightweight markup-to-HTML converter. The markup format used is
+a superset of Creole, including a few custom extensions.
+
+== Usage
+
+From within Python:
+``` python
+from syntaq import Markup
+print(Markup("hello, **world**").to_html())
+```
+
+== Inline Markup
+
+=== Emphasis
+Emphasis is attained via double forward slashes. Syntaq converts these to <em>
+tags, e.g. ``"this is ~//really~// exciting"`` becomes ``"this is
+<em>really</em> exciting"``.
+
+== Block Markup
