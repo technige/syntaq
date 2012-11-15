@@ -120,6 +120,14 @@ class InlineMarkupTester(unittest.TestCase):
         line = InlineMarkup("[[http://www.example.com/stuff|this is a //really// interesting link --> {{image.jpg}}]]")
         assert line.to_html() == '<a href="http://www.example.com/stuff">this is a <em>really</em> interesting link --&gt; <img src="image.jpg"></a>'
 
+    def test_escaped_asterisks(self):
+        line = InlineMarkup("foo ~** bar")
+        assert line.to_html() == "foo ** bar"
+
+    def test_trailing_tilde(self):
+        line = InlineMarkup("foo bar ~")
+        assert line.to_html() == "foo bar ~"
+
 
 if __name__ == "__main__":
     unittest.main()

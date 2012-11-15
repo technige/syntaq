@@ -4,6 +4,7 @@
 from __future__ import print_function
 
 import re
+import string
 
 
 HEADING = re.compile(r"^(={1,6})\s*(.*[^=\s])\s*=*")
@@ -195,6 +196,61 @@ class InlineMarkup(object):
             else:
                 out.write_text(token)
         out.close()
+        return str(out)
+
+
+class TableRowMarkup(object):
+
+    def __init__(self, markup):
+        assert markup.startswith("|")
+        markup = markup.strip()
+        if markup.endswith("|"):
+            self.cells = markup[1:-1].split("|")
+        else:
+            self.cells = markup[1:].split("|")
+        deleted_cells = []
+        for i, cell in enumerate(self.cells):
+            if cell.endswith("~"):
+                tildes = 1
+                while cell.endswith("~" * tildes):
+                    tildes += 1
+                escaped = tildes % 2 == 1
+                if not escaped:
+                    try:
+                        self.cells[i] += "|" + self.cells[i + 1]
+                        deleted_cells.append(i + 1)
+                    except IndexError:
+                        pass
+        for i in deleted_cells:
+            del self.cells[i]
+
+    def to_html(self):
+        out = HTMLOutputStream()
+        out.start_tag("tr")
+        for cell in self.cells:
+            if cell.startswith("="):
+                tag = "th"
+                content = cell[1:]
+            else:
+                tag = "td"
+                content = cell
+            align = None
+            if content:
+                left_padded = content[0] in string.whitespace
+                right_padded = content[-1] in string.whitespace
+                if left_padded and right_padded:
+                    align = "center"
+                elif right_padded:
+                    align = "left"
+                elif left_padded:
+                    align = "right"
+            if align:
+                content = content.strip()
+                out.element(tag, {"style": "align:" + align}, html=InlineMarkup(content).to_html())
+            else:
+                out.element(tag, html=InlineMarkup(content).to_html())
+        out.close()
+        print(str(out))
         return str(out)
 
 
