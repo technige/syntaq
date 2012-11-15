@@ -212,27 +212,35 @@ class InlineMarkup(object):
 class TableRowMarkup(object):
 
     def __init__(self, markup):
+        bracket_tokens = {
+            "``" : "``",
+            "[[" : "]]",
+            "{{" : "}}",
+            "{{{": "}}}",
+            }
+        tokeniser = Tokeniser("~", "|", "``", "[[", "]]", "{{", "}}", "{{{", "}}}")
         assert markup.startswith("|")
-        markup = markup.strip()
+        markup = markup.rstrip()
         if markup.endswith("|"):
-            self.cells = markup[1:-1].split("|")
+            tokens = list(tokeniser.tokenise(markup[:-1]))
         else:
-            self.cells = markup[1:].split("|")
-        deleted_cells = []
-        for i, cell in enumerate(self.cells):
-            if cell.endswith("~"):
-                tildes = 1
-                while cell.endswith("~" * tildes):
-                    tildes += 1
-                escaped = tildes % 2 == 1
-                if not escaped:
-                    try:
-                        self.cells[i] += "|" + self.cells[i + 1]
-                        deleted_cells.append(i + 1)
-                    except IndexError:
-                        pass
-        for i in deleted_cells:
-            del self.cells[i]
+            tokens = list(tokeniser.tokenise(markup))
+        self.cells = []
+        while tokens:
+            token = tokens.pop(0)
+            if token == "|":
+                self.cells.append([])
+            elif token in bracket_tokens:
+                end = bracket_tokens[token]
+                self.cells[-1].append(token)
+                while tokens:
+                    token = tokens.pop(0)
+                    self.cells[-1].append(token)
+                    if token == end:
+                        break
+            else:
+                self.cells[-1].append(token)
+        self.cells = ["".join(cell) for cell in self.cells]
 
     def to_html(self):
         out = HTMLOutputStream()
@@ -260,7 +268,6 @@ class TableRowMarkup(object):
             else:
                 out.element(tag, html=InlineMarkup(content).to_html())
         out.close()
-        print(str(out))
         return str(out)
 
 
@@ -331,8 +338,6 @@ class Markup(object):
                             self.blocks.append((block, params, lines))
                             lines = []
         self._append_block(block, params, lines)
-        #from pprint import pprint
-        #pprint(self.blocks)
 
     def _append_block(self, block, params, lines):
         if block or lines:
@@ -374,42 +379,3 @@ class Markup(object):
                 for i in range(level):
                     out.end_tag(tag)
         return str(out)
-
-def to_html(markup):
-    out = Markup(markup).to_html()
-    #print(out)
-    return out
-
-def __test__():
-    import json
-    import os
-    test_dir = os.path.join(os.path.dirname(__file__), "..", "..", "test")
-    for file_name in os.listdir(test_dir):
-        file_name = os.path.join(test_dir, file_name)
-        if os.path.isfile(file_name) and file_name.endswith(".tsv"):
-            print(file_name)
-            file = open(file_name)
-            for line in file:
-                line = line.strip()
-                values = map(json.loads, line.split("\t"))
-                print("    " + " -> ".join(map(json.dumps, values)))
-                if values:
-                    actual = Markup(values[0]).to_html()
-                    try:
-                        assert actual == values[1]
-                    except AssertionError:
-                        raise AssertionError("Processing {0} resulted in {1} instead of expected {2}".format(
-                            json.dumps(values[0]), json.dumps(actual), json.dumps(values[1])
-                        ))
-            file.close()
-
-if __name__ == "__main__":
-    import sys
-    args = sys.argv[1:]
-    if args:
-        for arg in args:
-            file = open(arg)
-            print(to_html(file.read()))
-            file.close()
-    else:
-        __test__()

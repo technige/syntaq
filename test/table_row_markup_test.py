@@ -118,7 +118,7 @@ class TableRowMarkupTester(unittest.TestCase):
 
     def test_cell_with_preformatted_content(self):
         line = TableRowMarkup("|{{{foo|bar}}}|")
-        assert line.to_html() == '<tr><td><code>foo|bar</code></td></tr>'
+        assert line.to_html() == '<tr><td>foo|bar</td></tr>'
 
     def test_cell_with_image_and_alt(self):
         line = TableRowMarkup("|{{foo.jpg|bar}}|")
@@ -127,6 +127,17 @@ class TableRowMarkupTester(unittest.TestCase):
     def test_cell_with_link_and_image(self):
         line = TableRowMarkup("|[[foo|{{bar.jpg|baz}}]]|")
         assert line.to_html() == '<tr><td><a href="foo"><img src="bar.jpg" alt="baz"></a></td></tr>'
+
+    def test_cell_with_unclosed_brackets(self):
+        line = TableRowMarkup("|[[foo|{{bar.jpg|baz|")
+        assert line.to_html() == '<tr><td><a href="foo"><img src="bar.jpg" alt="baz"></a></td></tr>'
+
+    def test_cells_with_multiple_brackets(self):
+        line = TableRowMarkup("|[[foo]]|[[foo~|bar]]|[[foo|bar]]|``foo|bar``|{{{foo|bar}}}|{{foo.jpg|bar}}|[[foo|{{bar.jpg|baz}}]]|")
+        assert line.to_html() == '<tr><td><a href="foo">foo</a></td><td><a href="foo~|bar">foo~|bar</a></td><td>' \
+                                 '<a href="foo">bar</a></td><td><code>foo|bar</code></td><td>foo|bar</td><td>' \
+                                 '<img src="foo.jpg" alt="bar"></td><td><a href="foo"><img src="bar.jpg" alt="baz">' \
+                                 '</a></td></tr>'
 
 
 if __name__ == "__main__":
