@@ -20,6 +20,10 @@ class InlineMarkupTester(unittest.TestCase):
         line = InlineMarkup("foo & bar")
         assert line.to_html() == "foo &amp; bar"
 
+    def test_entities(self):
+        line = InlineMarkup("foo & ' \" < > bar")
+        assert line.to_html() == "foo &amp; &apos; &quot; &lt; &gt; bar"
+
     def test_strong(self):
         line = InlineMarkup("foo **bar**")
         assert line.to_html() == "foo <strong>bar</strong>"
