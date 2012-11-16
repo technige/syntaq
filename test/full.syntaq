@@ -126,10 +126,11 @@ Linked image:
 
 Tables are done like this:
 
-|=header col1|=header col2| 
-|col1|col2| 
-|you         |can         | 
-|also        |align\\ it. | 
+|=|=Column 1|=Column 2|
+|=Row 1|some really big content to make sure| there's room to demonstrate alignment|
+|=Row 2|default alignment|  right-aligned|
+|=Row 3|   centralised   |left-aligned   |
+|=Row 4|                 |a line\\break in a cell|
 
 You can format an address by simply forcing linebreaks:
 

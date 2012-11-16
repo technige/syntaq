@@ -78,27 +78,27 @@ class TableRowMarkupTester(unittest.TestCase):
 
     def test_left_aligned_cell(self):
         line = TableRowMarkup("|foo |")
-        assert line.to_html() == '<tr><td style="align:left">foo</td></tr>'
+        assert line.to_html() == '<tr><td style="text-align:left">foo</td></tr>'
 
     def test_right_aligned_cell(self):
         line = TableRowMarkup("| foo|")
-        assert line.to_html() == '<tr><td style="align:right">foo</td></tr>'
+        assert line.to_html() == '<tr><td style="text-align:right">foo</td></tr>'
 
     def test_center_aligned_cell(self):
         line = TableRowMarkup("| foo |")
-        assert line.to_html() == '<tr><td style="align:center">foo</td></tr>'
+        assert line.to_html() == '<tr><td style="text-align:center">foo</td></tr>'
 
     def test_left_aligned_header_cell(self):
         line = TableRowMarkup("|=foo |")
-        assert line.to_html() == '<tr><th style="align:left">foo</th></tr>'
+        assert line.to_html() == '<tr><th style="text-align:left">foo</th></tr>'
 
     def test_right_aligned_header_cell(self):
         line = TableRowMarkup("|= foo|")
-        assert line.to_html() == '<tr><th style="align:right">foo</th></tr>'
+        assert line.to_html() == '<tr><th style="text-align:right">foo</th></tr>'
 
     def test_center_aligned_header_cell(self):
         line = TableRowMarkup("|= foo |")
-        assert line.to_html() == '<tr><th style="align:center">foo</th></tr>'
+        assert line.to_html() == '<tr><th style="text-align:center">foo</th></tr>'
 
     def test_cell_with_entity(self):
         line = TableRowMarkup("|foo & bar|")

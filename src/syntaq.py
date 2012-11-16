@@ -13,6 +13,7 @@ ORDERED_LIST = re.compile(r"^(#+)\s*(.*)")
 PREFORMATTED = re.compile(r"^(\{\{\{)\s*([-:\s\w]*)", re.UNICODE)
 BLOCK_CODE = re.compile(r"^(```)\s*([-:\s\w]*)", re.UNICODE)
 UNORDERED_LIST = re.compile(r"^(\*+)\s*(.*)")
+TABLE = re.compile(r"^(\|.*)")
 
 END_OF_PREFORMATTED = re.compile(r"^\s*(\}\}\})")
 END_OF_BLOCK_CODE = re.compile(r"^\s*(```)")
@@ -60,7 +61,7 @@ class HTMLOutputStream(object):
             self.tokens.append("<{0} {1}>".format(
                 tag,
                 " ".join(
-                    '{0}="{1}"'.format(key, HTML.entities(value))
+                    '{0}="{1}"'.format(key, HTML.entities(str(value)))
                     for key, value in attributes.items()
                     if value is not None
                 )
@@ -264,7 +265,7 @@ class TableRowMarkup(object):
                     align = "right"
             if align:
                 content = content.strip()
-                out.element(tag, {"style": "align:" + align}, html=InlineMarkup(content).to_html())
+                out.element(tag, {"style": "text-align:" + align}, html=InlineMarkup(content).to_html())
             else:
                 out.element(tag, html=InlineMarkup(content).to_html())
         out.close()
@@ -299,6 +300,7 @@ class Markup(object):
                 preformatted = PREFORMATTED.match(line)
                 block_code = BLOCK_CODE.match(line)
                 unordered_list = UNORDERED_LIST.match(line)
+                table = TABLE.match(line)
                 if heading:
                     self._append_block(block, params, lines)
                     block, params, lines = None, None, []
@@ -327,6 +329,11 @@ class Markup(object):
                     else:
                         self._append_block(block, params, lines)
                         block, params, lines = UNORDERED_LIST, [len(unordered_list.group(1))], [unordered_list.group(2)]
+                elif table:
+                    if block is not TABLE:
+                        self._append_block(block, params, lines)
+                        block, params, lines = TABLE, None, []
+                    lines.append(TableRowMarkup(table.group(1)))
                 else:
                     if block:
                         self._append_block(block, params, lines)
@@ -378,4 +385,17 @@ class Markup(object):
                     out.element("li", html=InlineMarkup(line).to_html())
                 for i in range(level):
                     out.end_tag(tag)
+            elif block is TABLE:
+                out.start_tag("table", {"cellspacing": 0})
+                for line in lines:
+                    out.write_html(line.to_html())
+                out.end_tag("table")
         return str(out)
+
+
+if __name__ == "__main__":
+    import codecs
+    import sys
+    if len(sys.argv) > 1:
+        markup = codecs.open(sys.argv[1], "r", "UTF-8").read()
+        print(Markup(markup).to_html())
