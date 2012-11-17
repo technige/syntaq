@@ -1,7 +1,7 @@
 = Syntaq
 
-Syntaq is a lightweight markup-to-HTML converter. The markup format used is
-a superset of Creole, including a few custom extensions.
+Syntaq is a lightweight markup language based on (and backward compatible with)
+Creole.
 
 == Usage
 
