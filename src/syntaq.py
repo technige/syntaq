@@ -183,6 +183,8 @@ class InlineMarkup(object):
                     token = tokens.pop(0)
                     if token == end_token:
                         break
+                    elif token[0] == "~":
+                        markup.append(token[1:])
                     else:
                         markup.append(token)
                 writer(out, "".join(markup))
@@ -192,6 +194,8 @@ class InlineMarkup(object):
                     token = tokens.pop(0)
                     if token in ("|", "]]"):
                         break
+                    elif token[0] == "~":
+                        href.append(token[1:])
                     else:
                         href.append(token)
                 href = "".join(href)
