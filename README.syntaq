@@ -13,9 +13,10 @@ print(Markup("hello, **world**").to_html())
 
 == Inline Markup
 
-=== Emphasis
-Emphasis is attained via double forward slashes. Syntaq converts these to <em>
-tags, e.g. ``"this is ~//really~// exciting"`` becomes ``"this is
-<em>really</em> exciting"``.
+|     Effect     |    Markup     | HTML                     |Example
+|emphasis        |  ``//...//``  | ``<em>...</em>``         |``This is //really// good.``
+|strong emphasis |  ``**...**``  | ``<strong>...</strong>`` |``**Do not** do that!``
+|computer code   | ``~``...~```` | ``<code>...</code>``     |``~``print "hello, world"~````
+|superscript     |  ``^^...^^``  | ``<sup>...</sup>``       |``a^^2^^ = b^^2^^ + c^^2^^``
 
 == Block Markup
