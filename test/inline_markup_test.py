@@ -49,7 +49,7 @@ class InlineMarkupTester(unittest.TestCase):
         assert line.to_html() == "foo <sup>bar</sup>"
 
     def test_sub(self):
-        line = InlineMarkup("foo ,,bar,,")
+        line = InlineMarkup("foo __bar__")
         assert line.to_html() == "foo <sub>bar</sub>"
 
     def test_q(self):

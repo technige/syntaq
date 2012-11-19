@@ -139,7 +139,7 @@ class InlineMarkup(object):
         tokeniser = Tokeniser("~",
             "http://", "https://", "ftp://", "mailto:",
             "\\\\", "{{{", "}}}", "{{", "}}", "``", '""',
-            "**", "//", "^^", ",,", "[[", "]]", "|"
+            "**", "//", "^^", "__", "[[", "]]", "|"
         )
         self.tokens = list(tokeniser.tokenise(markup))
 
@@ -153,7 +153,7 @@ class InlineMarkup(object):
             "//": "em",
             '""': "q",
             "**": "strong",
-            ",,": "sub",
+            "__": "sub",
             "^^": "sup",
         }
         bracket_tokens = {

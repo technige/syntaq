@@ -13,10 +13,33 @@ print(Markup("hello, **world**").to_html())
 
 == Inline Markup
 
-|     Effect     |    Markup     | HTML                     |Example
-|emphasis        |  ``//...//``  | ``<em>...</em>``         |``This is //really// good.``
-|strong emphasis |  ``**...**``  | ``<strong>...</strong>`` |``**Do not** do that!``
-|computer code   | ``~``...~```` | ``<code>...</code>``     |``~``print "hello, world"~````
-|superscript     |  ``^^...^^``  | ``<sup>...</sup>``       |``a^^2^^ = b^^2^^ + c^^2^^``
+|=    Style      |= Markup       |= HTML                    |=Example
+|emphasis        |  ``//...//``  | ``<em>...</em>``         |This is //really// good.
+|strong emphasis |  ``**...**``  | ``<strong>...</strong>`` |Do **not** do that!
+|superscript     |  ``^^...^^``  | ``<sup>...</sup>``       |a^^2^^ = b^^2^^ + c^^2^^
+|subscript       |  ``__...__``  | ``<sub>...</sub>``       |H__2__SO__4__
+|quotation       |  ``""...""``  | ``<q>...</q>``           |""Live long and prosper"" -- Spock
+|computer code   | ``~``...~```` | ``<code>...</code>``     |``print "hello, world"``
+|link            | ``[[http://example.com/]]`` | ``<a href="http://example.com/">http://example.com/</a>``     |[[http://example.com/]]
+|link with description
+|image
+|image link
+|preformatted text
 
-== Block Markup
+== Headings
+
+== Horizontal Lines
+
+== Lists
+
+== Tables
+
+=== Header Cells
+
+=== Cell Alignment
+
+== Block Code
+
+== Preformatted Text Blocks
+
+== Escaping
