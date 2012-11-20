@@ -44,11 +44,11 @@ class HTMLOutputStream(object):
         self.tokens = []
         self.stack = []
 
-    def __str__(self):
+    def __html__(self):
         return "".join(self.tokens)
 
     def __repr__(self):
-        return str(self)
+        return self.__html__()
 
     def write_html(self, html):
         self.tokens.append(html)
@@ -103,7 +103,7 @@ class HTMLOutputStream(object):
             self.tokens.append("</{0}>".format(t))
 
 
-class Tokeniser(object):
+class Partitioner(object):
 
     def __init__(self, escape, *markers):
         self.escape = escape
@@ -111,7 +111,7 @@ class Tokeniser(object):
         self.markers.extend(markers)
         self.marker_chars = list(set(marker[0] for marker in self.markers))
 
-    def tokenise(self, markup):
+    def partition(self, markup):
         self.tokens = []
         p, q = 0, 0
         while q < len(markup):
@@ -136,14 +136,15 @@ class Tokeniser(object):
 class InlineMarkup(object):
 
     def __init__(self, markup=None):
-        tokeniser = Tokeniser("~",
+        partitioner = Partitioner("~",
             "http://", "https://", "ftp://", "mailto:",
-            "\\\\", "{{{", "}}}", "{{", "}}", "``", '""',
+            '"""', "{{{", "}}}",
+            "\\\\", "{{", "}}", "``", '""',
             "**", "//", "^^", ",,", "[[", "]]", "|"
         )
-        self.tokens = list(tokeniser.tokenise(markup))
+        self.tokens = list(partitioner.partition(markup))
 
-    def to_html(self):
+    def __html__(self):
 
         def image(out, markup):
             src, alt = markup.partition("|")[0::2]
@@ -211,25 +212,48 @@ class InlineMarkup(object):
             else:
                 out.write_text(token)
         out.close()
-        return str(out)
+        return out.__html__()
+
+
+class HeadingMarkup(object):
+
+    def __init__(self, markup):
+        if not markup.startswith("="):
+            raise ValueError("Heading must start with '='")
+        chars = list(markup.rstrip().rstrip("="))
+        self.level = 0
+        while chars and chars[0] == "=":
+            chars.pop(0)
+            self.level += 1
+        self.text = "".join(chars).strip()
+        if self.level > 6:
+            self.level = 6
+
+    def __html__(self):
+        out = HTMLOutputStream()
+        out.start_tag("h" + str(self.level))
+        out.write_text(self.text)
+        out.close()
+        return out.__html__()
 
 
 class TableRowMarkup(object):
 
     def __init__(self, markup):
+        if not markup.startswith("|"):
+            raise ValueError("Table row must start with '|'")
         bracket_tokens = {
             "``" : "``",
             "[[" : "]]",
             "{{" : "}}",
             "{{{": "}}}",
             }
-        tokeniser = Tokeniser("~", "|", "``", "[[", "]]", "{{", "}}", "{{{", "}}}")
-        assert markup.startswith("|")
+        partitioner = Partitioner("~", "|", "``", "[[", "]]", "{{", "}}", "{{{", "}}}")
         markup = markup.rstrip()
         if markup.endswith("|"):
-            tokens = list(tokeniser.tokenise(markup[:-1]))
+            tokens = list(partitioner.partition(markup[:-1]))
         else:
-            tokens = list(tokeniser.tokenise(markup))
+            tokens = list(partitioner.partition(markup))
         self.cells = []
         while tokens:
             token = tokens.pop(0)
@@ -247,7 +271,7 @@ class TableRowMarkup(object):
                 self.cells[-1].append(token)
         self.cells = ["".join(cell) for cell in self.cells]
 
-    def to_html(self):
+    def __html__(self):
         out = HTMLOutputStream()
         out.start_tag("tr")
         for cell in self.cells:
@@ -269,11 +293,11 @@ class TableRowMarkup(object):
                     align = "right"
             if align:
                 content = content.strip()
-                out.element(tag, {"style": "text-align:" + align}, html=InlineMarkup(content).to_html())
+                out.element(tag, {"style": "text-align:" + align}, html=InlineMarkup(content).__html__())
             else:
-                out.element(tag, html=InlineMarkup(content).to_html())
+                out.element(tag, html=InlineMarkup(content).__html__())
         out.close()
-        return str(out)
+        return out.__html__()
 
 
 class Markup(object):
@@ -298,17 +322,17 @@ class Markup(object):
                     lines.append(line)
             else:
                 line = line.strip()
-                heading = HEADING.match(line)
+                #heading = HEADING.match(line)
                 horizontal_rule = HORIZONTAL_RULE.match(line)
                 ordered_list = ORDERED_LIST.match(line)
                 preformatted = PREFORMATTED.match(line)
                 block_code = BLOCK_CODE.match(line)
                 unordered_list = UNORDERED_LIST.match(line)
-                table = TABLE.match(line)
-                if heading:
+                #table = TABLE.match(line)
+                if line.startswith("="):
                     self._append_block(block, params, lines)
                     block, params, lines = None, None, []
-                    self.blocks.append((HEADING, len(heading.group(1)), [heading.group(2)]))
+                    self.blocks.append((HEADING, None, [HeadingMarkup(line)]))
                 elif horizontal_rule:
                     self._append_block(block, params, lines)
                     block, params, lines = None, None, []
@@ -333,11 +357,11 @@ class Markup(object):
                     else:
                         self._append_block(block, params, lines)
                         block, params, lines = UNORDERED_LIST, [len(unordered_list.group(1))], [unordered_list.group(2)]
-                elif table:
+                elif line.startswith("|"):
                     if block is not TABLE:
                         self._append_block(block, params, lines)
                         block, params, lines = TABLE, None, []
-                    lines.append(TableRowMarkup(table.group(1)))
+                    lines.append(TableRowMarkup(line))
                 else:
                     if block:
                         self._append_block(block, params, lines)
@@ -354,13 +378,14 @@ class Markup(object):
         if block or lines:
             self.blocks.append((block, params, lines))
 
-    def to_html(self):
+    def __html__(self):
         out = HTMLOutputStream()
         for i, (block, params, lines) in enumerate(self.blocks):
             if block is None:
-                out.element("p", html=InlineMarkup(" ".join(lines)).to_html())
+                out.element("p", html=InlineMarkup(" ".join(lines)).__html__())
             elif block is HEADING:
-                out.element("h" + str(params), text="".join(lines))
+                for line in lines:
+                    out.write_html(line.__html__())
             elif block is HORIZONTAL_RULE:
                 out.tag("hr")
             elif block in (PREFORMATTED, BLOCK_CODE):
@@ -386,15 +411,15 @@ class Markup(object):
                     while level < params[i]:
                         out.start_tag(tag)
                         level += 1
-                    out.element("li", html=InlineMarkup(line).to_html())
+                    out.element("li", html=InlineMarkup(line).__html__())
                 for i in range(level):
                     out.end_tag(tag)
             elif block is TABLE:
                 out.start_tag("table", {"cellspacing": 0})
                 for line in lines:
-                    out.write_html(line.to_html())
+                    out.write_html(line.__html__())
                 out.end_tag("table")
-        return str(out)
+        return out.__html__()
 
 
 if __name__ == "__main__":
@@ -402,4 +427,4 @@ if __name__ == "__main__":
     import sys
     if len(sys.argv) > 1:
         markup = codecs.open(sys.argv[1], "r", "UTF-8").read()
-        print(Markup(markup).to_html())
+        print(Markup(markup).__html__())

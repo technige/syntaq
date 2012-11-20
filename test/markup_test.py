@@ -3,7 +3,7 @@
 
 import unittest
 
-from syntaq import Markup
+from syntaq import Markup, HeadingMarkup
 
 
 class ParagraphTester(unittest.TestCase):
@@ -37,7 +37,7 @@ class ParagraphTester(unittest.TestCase):
 
     def test_all(self):
         for (markup, expected_html) in self.tests:
-            actual_html = Markup(markup).to_html()
+            actual_html = Markup(markup).__html__()
             assert actual_html == expected_html
 
 
@@ -45,29 +45,28 @@ class HeadingTester(unittest.TestCase):
 
     tests = [
         ("=foo", "<h1>foo</h1>"),
-        ("=foo\n", "<h1>foo</h1>"),
-        ("=foo\nbar", "<h1>foo</h1><p>bar</p>"),
-        ("=foo=\nbar", "<h1>foo</h1><p>bar</p>"),
-        ("= foo\nbar", "<h1>foo</h1><p>bar</p>"),
-        ("= foo =\nbar", "<h1>foo</h1><p>bar</p>"),
-        ("= E=mc^2 =\nfoo bar", "<h1>E=mc^2</h1><p>foo bar</p>"),
-        ("==foo\nbar", "<h2>foo</h2><p>bar</p>"),
-        ("==foo==\nbar", "<h2>foo</h2><p>bar</p>"),
-        ("== foo\nbar", "<h2>foo</h2><p>bar</p>"),
-        ("== foo ==\nbar", "<h2>foo</h2><p>bar</p>"),
-        ("== E=mc^2 ==\nfoo bar", "<h2>E=mc^2</h2><p>foo bar</p>"),
-        ("=== foo\nbar", "<h3>foo</h3><p>bar</p>"),
-        ("=== foo ===\nbar", "<h3>foo</h3><p>bar</p>"),
-        ("==== foo\nbar", "<h4>foo</h4><p>bar</p>"),
-        ("==== foo ====\nbar", "<h4>foo</h4><p>bar</p>"),
-        ("===== foo\nbar", "<h5>foo</h5><p>bar</p>"),
-        ("===== foo =====\nbar", "<h5>foo</h5><p>bar</p>"),
-        ("====== foo\nbar", "<h6>foo</h6><p>bar</p>"),
-        ("====== foo ======\nbar", "<h6>foo</h6><p>bar</p>"),
-        ("======= foo\nbar", "<h6>= foo</h6><p>bar</p>"),
-        ("======= foo =======\nbar", "<h6>= foo</h6><p>bar</p>"),
-        ("=== foo ======\nbar", "<h3>foo</h3><p>bar</p>"),
-        ("====== foo ===\nbar", "<h6>foo</h6><p>bar</p>"),
+        ("=foo", "<h1>foo</h1>"),
+        ("=foo=", "<h1>foo</h1>"),
+        ("= foo", "<h1>foo</h1>"),
+        ("= foo =", "<h1>foo</h1>"),
+        ("= E=mc^2 =", "<h1>E=mc^2</h1>"),
+        ("==foo", "<h2>foo</h2>"),
+        ("==foo==", "<h2>foo</h2>"),
+        ("== foo", "<h2>foo</h2>"),
+        ("== foo ==", "<h2>foo</h2>"),
+        ("== E=mc^2 ==", "<h2>E=mc^2</h2>"),
+        ("=== foo", "<h3>foo</h3>"),
+        ("=== foo ===", "<h3>foo</h3>"),
+        ("==== foo", "<h4>foo</h4>"),
+        ("==== foo ====", "<h4>foo</h4>"),
+        ("===== foo", "<h5>foo</h5>"),
+        ("===== foo =====", "<h5>foo</h5>"),
+        ("====== foo", "<h6>foo</h6>"),
+        ("====== foo ======", "<h6>foo</h6>"),
+        ("======= foo", "<h6>foo</h6>"),
+        ("======= foo =======", "<h6>foo</h6>"),
+        ("=== foo ======", "<h3>foo</h3>"),
+        ("====== foo ===", "<h6>foo</h6>"),
         ("= foo & bar", "<h1>foo &amp; bar</h1>"),
         ("= foo 'bar'", "<h1>foo &apos;bar&apos;</h1>"),
         ("= foo \"bar\"", "<h1>foo &quot;bar&quot;</h1>"),
@@ -77,8 +76,12 @@ class HeadingTester(unittest.TestCase):
 
     def test_all(self):
         for (markup, expected_html) in self.tests:
-            actual_html = Markup(markup).to_html()
-            assert actual_html == expected_html
+            actual_html = HeadingMarkup(markup).__html__()
+            try:
+                assert actual_html == expected_html
+            except AssertionError as err:
+                print(actual_html + " != " + expected_html)
+                raise err
 
 
 class HorizontalRuleTester(unittest.TestCase):
@@ -91,7 +94,7 @@ class HorizontalRuleTester(unittest.TestCase):
 
     def test_all(self):
         for (markup, expected_html) in self.tests:
-            actual_html = Markup(markup).to_html()
+            actual_html = Markup(markup).__html__()
             assert actual_html == expected_html
 
 
@@ -109,7 +112,7 @@ class ListTester(unittest.TestCase):
 
     def test_all(self):
         for (markup, expected_html) in self.tests:
-            actual_html = Markup(markup).to_html()
+            actual_html = Markup(markup).__html__()
             assert actual_html == expected_html
 
 
@@ -140,7 +143,7 @@ class PreformattedTester(unittest.TestCase):
 
     def test_all(self):
         for (markup, expected_html) in self.tests:
-            actual_html = Markup(markup).to_html()
+            actual_html = Markup(markup).__html__()
             assert actual_html == expected_html
 
 

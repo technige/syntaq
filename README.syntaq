@@ -17,7 +17,7 @@ print(Markup("hello, **world**").to_html())
 |emphasis        |  ``//...//``  | ``<em>...</em>``         |This is //really// good.
 |strong emphasis |  ``**...**``  | ``<strong>...</strong>`` |Do **not** do that!
 |superscript     |  ``^^...^^``  | ``<sup>...</sup>``       |a^^2^^ = b^^2^^ + c^^2^^
-|subscript       |  ``__...__``  | ``<sub>...</sub>``       |H__2__SO__4__
+|subscript       |  ``,,...,,``  | ``<sub>...</sub>``       |H,,2,,SO,,4,,
 |quotation       |  ``""...""``  | ``<q>...</q>``           |""Live long and prosper"" -- Spock
 |computer code   | ``~``...~```` | ``<code>...</code>``     |``print "hello, world"``
 |link            | ``[[http://example.com/]]`` | ``<a href="http://example.com/">http://example.com/</a>``     |[[http://example.com/]]
@@ -37,6 +37,8 @@ print(Markup("hello, **world**").to_html())
 === Header Cells
 
 === Cell Alignment
+
+== Block Quotations
 
 == Block Code
 
