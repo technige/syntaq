@@ -271,6 +271,18 @@ class HeadingMarkup(object):
         return out.__html__()
 
 
+class HorizontalRuleMarkup(object):
+
+    def __init__(self, markup):
+        if not markup.startswith("----"):
+            raise ValueError("Horizontal rule must start with '----'")
+
+    def __html__(self):
+        out = HTMLOutputStream()
+        out.tag("hr")
+        return out.__html__()
+
+
 class TableRowMarkup(object):
 
     def __init__(self, markup):
@@ -357,7 +369,7 @@ class Markup(object):
             else:
                 line = line.rstrip()
                 #heading = HEADING.match(line)
-                horizontal_rule = HORIZONTAL_RULE.match(line)
+                #horizontal_rule = HORIZONTAL_RULE.match(line)
                 ordered_list = ORDERED_LIST.match(line)
                 preformatted = PREFORMATTED.match(line)
                 block_code = BLOCK_CODE.match(line)
@@ -367,10 +379,10 @@ class Markup(object):
                     self._append_block(block, params, lines)
                     block, params, lines = None, None, []
                     self.blocks.append((HEADING, None, [HeadingMarkup(line)]))
-                elif horizontal_rule:
+                elif line.startswith("----"):
                     self._append_block(block, params, lines)
                     block, params, lines = None, None, []
-                    self.blocks.append((HORIZONTAL_RULE, None, None))
+                    self.blocks.append((HORIZONTAL_RULE, None, [HorizontalRuleMarkup(line)]))
                 elif ordered_list:
                     if block is ORDERED_LIST:
                         params.append(len(ordered_list.group(1)))
@@ -421,7 +433,8 @@ class Markup(object):
                 for line in lines:
                     out.write_html(line.__html__())
             elif block is HORIZONTAL_RULE:
-                out.tag("hr")
+                for line in lines:
+                    out.write_html(line.__html__())
             elif block is PREFORMATTED:
                 if params:
                     out.start_tag("pre", {"class": " ".join(params)})
