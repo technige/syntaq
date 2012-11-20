@@ -352,7 +352,7 @@ class Markup(object):
                 else:
                     lines.append(line)
             else:
-                line = line.strip()
+                line = line.rstrip()
                 #heading = HEADING.match(line)
                 horizontal_rule = HORIZONTAL_RULE.match(line)
                 ordered_list = ORDERED_LIST.match(line)
@@ -549,6 +549,8 @@ p {
 
 em { font-style: italic; }
 strong { font-weight: bold; }
+sup { font-size: .7em; position: relative; top: -.4em; }
+sub { font-size: .7em; position: relative; bottom: -.4em; }
 
 a {
     color: #0087BD;
@@ -589,6 +591,14 @@ pre>ol>li>code {
 ul {
 	list-style: disc inside;
 	margin-left: 1em;
+}
+table {
+    border-collapse: collapse;
+    margin: .75em 0 .75em;
+}
+table th, table td {
+    border: 1px solid #CCC;
+    padding: .25em .5em;
 }
 </style>
 """)

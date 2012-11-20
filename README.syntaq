@@ -6,9 +6,10 @@ Creole.
 == Usage
 
 From within Python:
-``` python
-from syntaq import Markup
-print(Markup("hello, **world**").to_html())
+``` python repl
+>>> from syntaq import Markup
+>>> print(Markup("hello, **world**").__html__())
+<p>hello, <strong>world</strong></p>
 ```
 
 == Emphasis
@@ -16,22 +17,32 @@ print(Markup("hello, **world**").to_html())
 Emphasis (generally rendered as italic text) can be indicated by using pairs of
 forward slash characters either side of the relevant text.
 
-``//emphasised text//`` --> //emphasised text//
+|= markup|``//emphasised text//`` \\
+|= output|//emphasised text//
 
 === Strong Emphasis
 
 To indicate strong emphasis, use pairs of asterisks instead of pairs of
 slashes. Within most browsers, this will be rendered as bold text.
 
-``**strongly emphasised text**`` --> **strongly emphasised text**
+|= markup|``**strongly emphasised text**`` \\
+|= output|**strongly emphasised text**
 
 === Mixed Emphasis
 
-Types of emphasis may be mixed by using both asterisks and slashes.
+Styles of emphasis may be mixed by using both asterisks and slashes.
 
-``**//very strongly//** //**emphasised text**//`` --> **//very strongly//** //**emphasised text**//
+|= markup|``**//very strongly//** //**emphasised text**//`` \\
+|= output|**//very strongly//** //**emphasised text**//
 
 == Superscript and Subscript
+
+Superscript and subscript text can be produced by using ``^^`` and ``,,``
+respectively.
+
+=== Example
+|= markup|``Ca^^2+^^ + 2Cl^^-^^ + 2Ag^^+^^ + 2NO,,3,,^^-^^ --> Ca^^2+^^ + 2NO,,3,,^^-^^ + 2AgCl(s)``
+|= output|Ca^^2+^^ + 2Cl^^-^^ + 2Ag^^+^^ + 2NO,,3,,^^-^^ --> Ca^^2+^^ + 2NO,,3,,^^-^^ + 2AgCl(s)
 
 == Quotations
 
