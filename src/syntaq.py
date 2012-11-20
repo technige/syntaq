@@ -458,4 +458,140 @@ if __name__ == "__main__":
     import sys
     if len(sys.argv) > 1:
         markup = codecs.open(sys.argv[1], "r", "UTF-8").read()
+        print("<!doctype html>\n<html>\n<head>")
+        print("""<style type="text/css">
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, font, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	outline: 0;
+	font-weight: inherit;
+	font-style: inherit;
+	font-size: 100%;
+	font-family: inherit;
+	vertical-align: baseline;
+}
+/* remember to define focus styles! */
+:focus {
+	outline: 0;
+}
+body {
+	line-height: 1;
+	color: black;
+	background: white;
+}
+ol, ul {
+	list-style: none;
+}
+/* tables still need 'cellspacing="0"' in the markup */
+table {
+	border-collapse: separate;
+	border-spacing: 0;
+}
+caption, th, td {
+	text-align: left;
+	font-weight: normal;
+}
+blockquote:before, blockquote:after,
+q:before, q:after {
+	content: "";
+}
+blockquote, q {
+	quotes: "" "";
+}
+
+/*
+"Droid Serif", "Lucida Bright", "Georgia", serif;
+"Droid Sans", "Lucida Sans", "Trebuchet", sans-serif;
+"Droid Sans Mono", "Lucida Sans Typewriter", "Andale Mono", monospace;
+*/
+
+html, body {
+    font-family: "Droid Sans", "Lucida Sans", "Trebuchet", sans-serif;
+    font-size: 11pt;
+    line-height: 150%;
+}
+
+code, pre, tt {
+    font-family: "Droid Sans Mono", "Lucida Sans Typewriter", "Andale Mono", monospace;
+    font-size: 11pt;
+    line-height: 150%;
+}
+
+h1 { font-weight: bold; font-size: 200%; margin: .25em 0 .5em 0; }
+h2 { font-weight: bold; font-size: 150%; margin: .75em 0 .5em 0; padding-top: .75em; border-top: 1px solid #CCC; }
+h3 { font-weight: bold; font-size: 125%; margin: .75em 0 .5em 0; }
+h4 { font-weight: bold; font-size: 100%; margin: .75em 0 .5em 0; }
+h5 { font-weight: bold; font-size: 90%; margin: .75em 0 .5em 0; }
+h6 { font-weight: bold; font-size: 80%; margin: .75em 0 .5em 0; }
+
+html {
+    background-color: #FBFBF7;
+    margin: 20px;
+}
+
+body {
+    margin: 0 0 0 0;
+    background-color: transparent;
+    color: #141410;
+}
+
+p {
+    margin: .75em 0 .75em;
+}
+
+em { font-style: italic; }
+strong { font-weight: bold; }
+
+a {
+    color: #0087BD;
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}
+
+pre {
+    display: block;
+    background-color: #E7E7E7;
+    color: #222;
+    border: 1px solid #BCE;
+    margin: .75em 0;
+    padding: .5em .5em .5em .75em;
+    overflow: auto;
+    cursor: text;
+}
+
+code {
+    background-color: #E7E7E7;
+}
+
+pre>ol {
+	list-style-type: decimal;
+	margin-left: 4em;
+	background-color: #333;
+}
+pre>ol>li:hover {
+    background-color: #444;
+}
+pre>ol>li>code {
+    color: #CCC;
+	margin-left: 1em;
+}
+
+ul {
+	list-style: disc inside;
+	margin-left: 1em;
+}
+</style>
+""")
+        print("</head>\n<body>\n")
         print(Markup(markup).__html__())
+        print("</body>\n</html>")

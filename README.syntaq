@@ -11,20 +11,40 @@ from syntaq import Markup
 print(Markup("hello, **world**").to_html())
 ```
 
-== Inline Markup
+== Emphasis
 
-|=    Style      |= Markup       |= HTML                    |= Example |
-|emphasis        |  ``//...//``  | ``<em>...</em>``         | foo //bar// |
-|strong emphasis |  ``**...**``  | ``<strong>...</strong>`` | foo **bar** |
-|superscript     |  ``^^...^^``  | ``<sup>...</sup>``       | foo ^^bar^^ |
-|subscript       |  ``,,...,,``  | ``<sub>...</sub>``       | foo ,,bar,, |
-|quotation       |  ``""...""``  | ``<q>...</q>``           | ""foo bar"" -- Foo Barrington |
-|computer code   | ``~``...~```` | ``<code>...</code>``     |``print "foo bar"`` |
+Emphasis (generally rendered as italic text) can be indicated by using pairs of
+forward slash characters either side of the relevant text.
+
+``//emphasised text//`` --> //emphasised text//
+
+=== Strong Emphasis
+
+To indicate strong emphasis, use pairs of asterisks instead of pairs of
+slashes. Within most browsers, this will be rendered as bold text.
+
+``**strongly emphasised text**`` --> **strongly emphasised text**
+
+=== Mixed Emphasis
+
+Types of emphasis may be mixed by using both asterisks and slashes.
+
+``**//very strongly//** //**emphasised text**//`` --> **//very strongly//** //**emphasised text**//
+
+== Superscript and Subscript
+
+== Quotations
+
+== Computer Code
+
+== Links and Images
+
 |link            | ``[[url]]``   | ``<a href="http://foo.com/">http://foo.com/</a>`` |
 |link with description | ``[[url|description]]``   | ``<a href="http://foo.com/">a link to foo</a>`` |
 |image
 |image link
-|preformatted text
+
+=== Automatic Link Detection
 
 == Headings
 
@@ -38,12 +58,6 @@ print(Markup("hello, **world**").to_html())
 
 === Cell Alignment
 
-== Block Quotations
-
-== Block Code
-
-== Preformatted Text Blocks
-
 == Escaping
 
-== Automatic URL Detection
+== Preformatted Text
