@@ -32,7 +32,9 @@ Here's a external link without a description: [[http://www.wikicreole.org]]
 
 Be careful that italic links are rendered properly:  //[[http://my.book.example/|My Book Title]]// 
 
-Free links without braces should be rendered as well, like http://www.wikicreole.org/ and http://www.wikicreole.org/users/~example. 
+Free links without braces should be rendered as well, like http://www.wikicreole.org/ and http://www.wikicreole.org/users/~example.
+Maybe sometimes they will have fragments such as http://example.com/foo#bar. Also headerless ones like foo.de/bar might also work!
+Hashtags are also good so things like #foo, #bar and #MyNameIsBert.
 
 Creole1.0 specifies that http://bar and ftp://bar should not render italic,
 something like foo://bar should render as italic.

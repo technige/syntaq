@@ -13,15 +13,15 @@ print(Markup("hello, **world**").to_html())
 
 == Inline Markup
 
-|=    Style      |= Markup       |= HTML                    |=Example
-|emphasis        |  ``//...//``  | ``<em>...</em>``         |This is //really// good.
-|strong emphasis |  ``**...**``  | ``<strong>...</strong>`` |Do **not** do that!
-|superscript     |  ``^^...^^``  | ``<sup>...</sup>``       |a^^2^^ = b^^2^^ + c^^2^^
-|subscript       |  ``,,...,,``  | ``<sub>...</sub>``       |H,,2,,SO,,4,,
-|quotation       |  ``""...""``  | ``<q>...</q>``           |""Live long and prosper"" -- Spock
-|computer code   | ``~``...~```` | ``<code>...</code>``     |``print "hello, world"``
-|link            | ``[[http://example.com/]]`` | ``<a href="http://example.com/">http://example.com/</a>``     |[[http://example.com/]]
-|link with description
+|=    Style      |= Markup       |= HTML                    |= Example |
+|emphasis        |  ``//...//``  | ``<em>...</em>``         | foo //bar// |
+|strong emphasis |  ``**...**``  | ``<strong>...</strong>`` | foo **bar** |
+|superscript     |  ``^^...^^``  | ``<sup>...</sup>``       | foo ^^bar^^ |
+|subscript       |  ``,,...,,``  | ``<sub>...</sub>``       | foo ,,bar,, |
+|quotation       |  ``""...""``  | ``<q>...</q>``           | ""foo bar"" -- Foo Barrington |
+|computer code   | ``~``...~```` | ``<code>...</code>``     |``print "foo bar"`` |
+|link            | ``[[url]]``   | ``<a href="http://foo.com/">http://foo.com/</a>`` |
+|link with description | ``[[url|description]]``   | ``<a href="http://foo.com/">a link to foo</a>`` |
 |image
 |image link
 |preformatted text
@@ -45,3 +45,5 @@ print(Markup("hello, **world**").to_html())
 == Preformatted Text Blocks
 
 == Escaping
+
+== Automatic URL Detection

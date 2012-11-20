@@ -18,6 +18,7 @@ TABLE = re.compile(r"^(\|.*)")
 END_OF_PREFORMATTED = re.compile(r"^\s*(\}\}\})")
 END_OF_BLOCK_CODE = re.compile(r"^\s*(```)")
 
+URL = re.compile(r"""(?i)\b((?:[a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))""")
 
 class HTML(object):
 
@@ -40,9 +41,11 @@ class HTML(object):
 
 class HTMLOutputStream(object):
 
-    def __init__(self):
+    def __init__(self, processors=None):
         self.tokens = []
         self.stack = []
+        self.token_buffer = []
+        self.processors = processors or []
 
     def __html__(self):
         return "".join(self.tokens)
@@ -50,15 +53,28 @@ class HTMLOutputStream(object):
     def __repr__(self):
         return self.__html__()
 
+    def _flush(self):
+        if self.token_buffer:
+            buffer = "".join(self.token_buffer)
+            self.token_buffer = []
+            for processor in self.processors:
+                buffer = processor[0].sub(processor[1], buffer)
+            self.tokens.append(buffer)
+
     def write_html(self, html):
+        self._flush()
         self.tokens.append(html)
 
-    def write_text(self, text):
-        self.tokens.extend(HTML.entities(text))
+    def write_text(self, text, post_process=False):
+        if post_process:
+            self.token_buffer.extend(HTML.entities(text))
+        else:
+            self._flush()
+            self.tokens.extend(HTML.entities(text))
 
     def tag(self, tag, attributes=None):
         if attributes:
-            self.tokens.append("<{0} {1}>".format(
+            self.write_html("<{0} {1}>".format(
                 tag,
                 " ".join(
                     '{0}="{1}"'.format(key, HTML.entities(str(value)))
@@ -67,7 +83,7 @@ class HTMLOutputStream(object):
                 )
             ))
         else:
-            self.tokens.append("<{0}>".format(tag))
+            self.write_html("<{0}>".format(tag))
 
     def start_tag(self, tag, attributes=None, void=False):
         self.tag(tag, attributes)
@@ -83,7 +99,7 @@ class HTMLOutputStream(object):
             raise ValueError("End tag </{0}> should have corresponding start tag <{0}>".format(tag))
         while True:
             t = self.stack.pop()
-            self.tokens.append("</{0}>".format(t))
+            self.write_html("</{0}>".format(t))
             if t == tag:
                 break
 
@@ -98,16 +114,20 @@ class HTMLOutputStream(object):
         self.end_tag()
 
     def close(self):
+        self._flush()
         while self.stack:
             t = self.stack.pop()
-            self.tokens.append("</{0}>".format(t))
+            self.write_html("</{0}>".format(t))
 
 
 class Partitioner(object):
 
     def __init__(self, escape, *markers):
         self.escape = escape
-        self.markers = [self.escape]
+        if escape:
+            self.markers = [self.escape]
+        else:
+            self.markers = []
         self.markers.extend(markers)
         self.marker_chars = list(set(marker[0] for marker in self.markers))
 
@@ -116,7 +136,10 @@ class Partitioner(object):
         p, q = 0, 0
         while q < len(markup):
             if markup[q] in self.marker_chars:
-                start = q + len(self.escape) if markup[q] == self.escape else q
+                if self.escape and markup[q] == self.escape:
+                    start = q + len(self.escape)
+                else:
+                    start = q
                 for seq in self.markers:
                     end = start + len(seq)
                     if markup[start:end] == seq:
@@ -150,6 +173,14 @@ class InlineMarkup(object):
             src, alt = markup.partition("|")[0::2]
             out.tag("img", {"src": src, "alt": alt or None})
 
+        def link(match):
+            url = match.group(1)
+            if ":" in url:
+                href = url
+            else:
+                href = "http://" + url
+            return '<a href="{0}">{1}</a>'.format(href, url)
+
         toggle_tokens = {
             "//": "em",
             '""': "q",
@@ -163,7 +194,7 @@ class InlineMarkup(object):
             "{{{": ("}}}", lambda out, markup: out.write_text(markup)),
         }
 
-        out = HTMLOutputStream()
+        out = HTMLOutputStream(processors=[(URL, link)])
         tokens = self.tokens[:]
         while tokens:
             token = tokens.pop(0)
@@ -210,7 +241,7 @@ class InlineMarkup(object):
                 except ValueError:
                     out.write_text(token)
             else:
-                out.write_text(token)
+                out.write_text(token, post_process=True)
         out.close()
         return out.__html__()
 
