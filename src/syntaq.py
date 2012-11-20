@@ -15,9 +15,6 @@ BLOCK_CODE = re.compile(r"^(```)\s*([-:\s\w]*)", re.UNICODE)
 UNORDERED_LIST = re.compile(r"^(\*+)\s*(.*)")
 TABLE = re.compile(r"^(\|.*)")
 
-END_OF_PREFORMATTED = re.compile(r"^\s*(\}\}\})")
-END_OF_BLOCK_CODE = re.compile(r"^\s*(```)")
-
 URL = re.compile(r"""(?i)\b((?:[a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))""")
 
 class HTML(object):
@@ -353,15 +350,13 @@ class Markup(object):
         block, params, lines = None, None, []
         for line in markup.splitlines(True):
             if block is PREFORMATTED:
-                at_end = END_OF_PREFORMATTED.match(line)
-                if at_end:
+                if line.startswith("}}}"):
                     self._append_block(block, params, lines)
                     block, params, lines = None, None, []
                 else:
                     lines.append(line)
             elif block is BLOCK_CODE:
-                at_end = END_OF_BLOCK_CODE.match(line)
-                if at_end:
+                if line.startswith("```"):
                     self._append_block(block, params, lines)
                     block, params, lines = None, None, []
                 else:
