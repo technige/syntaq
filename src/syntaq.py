@@ -161,7 +161,7 @@ class InlineMarkup(object):
     def __init__(self, markup=None):
         partitioner = Partitioner("~",
             "http://", "https://", "ftp://", "mailto:",
-            '"""', "{{{", "}}}",
+            '"""', "{{{", "}}}", "<--", "-->",
             "\\\\", "{{", "}}", "``", '""',
             "**", "//", "^^", ",,", "[[", "]]", "|"
         )
@@ -181,6 +181,11 @@ class InlineMarkup(object):
                 href = "http://" + url
             return '<a href="{0}">{1}</a>'.format(href, url)
 
+        simple_tokens = {
+            "\\\\": "<br>",
+            "-->": "&rarr;",
+            "<--": "&larr;",
+        }
         toggle_tokens = {
             "//": "em",
             '""': "q",
@@ -200,8 +205,8 @@ class InlineMarkup(object):
             token = tokens.pop(0)
             if token[0] == "~":
                 out.write_text(token[1:])
-            elif token == "\\\\":
-                out.tag("br")
+            elif token in simple_tokens:
+                out.write_html(simple_tokens[token])
             elif token in toggle_tokens:
                 tag = toggle_tokens[token]
                 if tag in out.stack:
@@ -262,9 +267,7 @@ class HeadingMarkup(object):
 
     def __html__(self):
         out = HTMLOutputStream()
-        out.start_tag("h" + str(self.level))
-        out.write_text(self.text)
-        out.close()
+        out.element("h" + str(self.level), text=self.text)
         return out.__html__()
 
 
@@ -327,7 +330,7 @@ class TableRowMarkup(object):
                 out.element(tag, {"style": "text-align:" + align}, html=InlineMarkup(content).__html__())
             else:
                 out.element(tag, html=InlineMarkup(content).__html__())
-        out.close()
+        out.end_tag("tr")
         return out.__html__()
 
 
@@ -419,15 +422,24 @@ class Markup(object):
                     out.write_html(line.__html__())
             elif block is HORIZONTAL_RULE:
                 out.tag("hr")
-            elif block in (PREFORMATTED, BLOCK_CODE):
+            elif block is PREFORMATTED:
                 if params:
                     out.start_tag("pre", {"class": " ".join(params)})
                 else:
                     out.start_tag("pre")
-                if block is BLOCK_CODE:
-                    out.start_tag("code")
                 for line in lines:
                     out.write_text(line)
+                out.end_tag("pre")
+            elif block is BLOCK_CODE:
+                if params:
+                    out.start_tag("pre", {"class": " ".join(params)})
+                else:
+                    out.start_tag("pre")
+                out.start_tag("ol")
+                for line in lines:
+                    out.start_tag("li")
+                    out.element("code", text=line)
+                    out.end_tag("li")
                 out.end_tag("pre")
             elif block in (ORDERED_LIST, UNORDERED_LIST):
                 if block is ORDERED_LIST:
@@ -456,152 +468,12 @@ class Markup(object):
 if __name__ == "__main__":
     import codecs
     import sys
+    import os
     if len(sys.argv) > 1:
         markup = codecs.open(sys.argv[1], "r", "UTF-8").read()
+        css = open(os.path.join(os.path.dirname(__file__), "..", "syntaq.css")).read()
         print("<!doctype html>\n<html>\n<head>")
-        print("""<style type="text/css">
-html, body, div, span, applet, object, iframe,
-h1, h2, h3, h4, h5, h6, p, blockquote, pre,
-a, abbr, acronym, address, big, cite, code,
-del, dfn, em, font, img, ins, kbd, q, s, samp,
-small, strike, strong, sub, sup, tt, var,
-dl, dt, dd, ol, ul, li,
-fieldset, form, label, legend,
-table, caption, tbody, tfoot, thead, tr, th, td {
-	margin: 0;
-	padding: 0;
-	border: 0;
-	outline: 0;
-	font-weight: inherit;
-	font-style: inherit;
-	font-size: 100%;
-	font-family: inherit;
-	vertical-align: baseline;
-}
-/* remember to define focus styles! */
-:focus {
-	outline: 0;
-}
-body {
-	line-height: 1;
-	color: black;
-	background: white;
-}
-ol, ul {
-	list-style: none;
-}
-/* tables still need 'cellspacing="0"' in the markup */
-table {
-	border-collapse: separate;
-	border-spacing: 0;
-}
-caption, th, td {
-	text-align: left;
-	font-weight: normal;
-}
-blockquote:before, blockquote:after,
-q:before, q:after {
-	content: "";
-}
-blockquote, q {
-	quotes: "" "";
-}
-
-/*
-"Droid Serif", "Lucida Bright", "Georgia", serif;
-"Droid Sans", "Lucida Sans", "Trebuchet", sans-serif;
-"Droid Sans Mono", "Lucida Sans Typewriter", "Andale Mono", monospace;
-*/
-
-html, body {
-    font-family: "Droid Sans", "Lucida Sans", "Trebuchet", sans-serif;
-    font-size: 11pt;
-    line-height: 150%;
-}
-
-code, pre, tt {
-    font-family: "Droid Sans Mono", "Lucida Sans Typewriter", "Andale Mono", monospace;
-    font-size: 11pt;
-    line-height: 150%;
-}
-
-h1 { font-weight: bold; font-size: 200%; margin: .25em 0 .5em 0; }
-h2 { font-weight: bold; font-size: 150%; margin: .75em 0 .5em 0; padding-top: .75em; border-top: 1px solid #CCC; }
-h3 { font-weight: bold; font-size: 125%; margin: .75em 0 .5em 0; }
-h4 { font-weight: bold; font-size: 100%; margin: .75em 0 .5em 0; }
-h5 { font-weight: bold; font-size: 90%; margin: .75em 0 .5em 0; }
-h6 { font-weight: bold; font-size: 80%; margin: .75em 0 .5em 0; }
-
-html {
-    background-color: #FBFBF7;
-    margin: 20px;
-}
-
-body {
-    margin: 0 0 0 0;
-    background-color: transparent;
-    color: #141410;
-}
-
-p {
-    margin: .75em 0 .75em;
-}
-
-em { font-style: italic; }
-strong { font-weight: bold; }
-sup { font-size: .7em; position: relative; top: -.4em; }
-sub { font-size: .7em; position: relative; bottom: -.4em; }
-
-a {
-    color: #0087BD;
-    text-decoration: none;
-}
-a:hover {
-    text-decoration: underline;
-}
-
-pre {
-    display: block;
-    background-color: #E7E7E7;
-    color: #222;
-    border: 1px solid #BCE;
-    margin: .75em 0;
-    padding: .5em .5em .5em .75em;
-    overflow: auto;
-    cursor: text;
-}
-
-code {
-    background-color: #E7E7E7;
-}
-
-pre>ol {
-	list-style-type: decimal;
-	margin-left: 4em;
-	background-color: #333;
-}
-pre>ol>li:hover {
-    background-color: #444;
-}
-pre>ol>li>code {
-    color: #CCC;
-	margin-left: 1em;
-}
-
-ul {
-	list-style: disc inside;
-	margin-left: 1em;
-}
-table {
-    border-collapse: collapse;
-    margin: .75em 0 .75em;
-}
-table th, table td {
-    border: 1px solid #CCC;
-    padding: .25em .5em;
-}
-</style>
-""")
+        print("<style type=\"text/css\">" + css + "</style>")
         print("</head>\n<body>\n")
         print(Markup(markup).__html__())
         print("</body>\n</html>")
