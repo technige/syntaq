@@ -108,12 +108,27 @@ class ListTester(unittest.TestCase):
         ("* foo\n** bar", "<ul><li>foo</li><ul><li>bar</li></ul></ul>"),
         ("* foo\n** bar\n* baz", "<ul><li>foo</li><ul><li>bar</li></ul><li>baz</li></ul>"),
         ("* foo\n* bar\n\n* baz\n* qux", "<ul><li>foo</li><li>bar</li></ul><ul><li>baz</li><li>qux</li></ul>"),
+        ("* foo\n* bar\n\n# baz\n# qux", "<ul><li>foo</li><li>bar</li></ul><ol><li>baz</li><li>qux</li></ol>"),
+        ("* foo\n# bar\n", "<ul><li>foo</li></ul><ol><li>bar</li></ol>"),
+        ("# foo\n* bar\n", "<ol><li>foo</li></ol><ul><li>bar</li></ul>"),
+        ("* foo\n## bar\n", "<ul><li>foo</li></ul><ol><ol><li>bar</li></ol></ol>"),
+        ("* foo\n*# bar\n", "<ul><li>foo</li><ol><li>bar</li></ol></ul>"),
+        ("* foo\n** bar\n", "<ul><li>foo</li><ul><li>bar</li></ul></ul>"),
+        ("* foo\n#* bar\n", "<ul><li>foo</li></ul><ol><ul><li>bar</li></ul></ol>"),
+        ("## foo\n# bar\n", "<ol><ol><li>foo</li></ol><li>bar</li></ol>"),
+        ("*# foo\n# bar\n", "<ul><ol><li>foo</li></ol></ul><ol><li>bar</li></ol>"),
+        ("** foo\n# bar\n", "<ul><ul><li>foo</li></ul></ul><ol><li>bar</li></ol>"),
+        ("#* foo\n# bar\n", "<ol><ul><li>foo</li></ul><li>bar</li></ol>"),
     ]
 
     def test_all(self):
         for (markup, expected_html) in self.tests:
             actual_html = Markup(markup).__html__()
-            assert actual_html == expected_html
+            try:
+                assert actual_html == expected_html
+            except AssertionError as err:
+                print(markup + "\n" + actual_html + " != " + expected_html)
+                raise err
 
 
 class PreformattedTester(unittest.TestCase):

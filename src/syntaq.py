@@ -280,6 +280,38 @@ class HorizontalRuleMarkup(object):
         return out.__html__()
 
 
+class ListItemMarkup(object):
+
+    def __init__(self, markup):
+        if not (markup.startswith("#") or markup.startswith("*")):
+            raise ValueError("List items must start with either '#' or '*'")
+        chars = list(markup.rstrip())
+        self.signature = []
+        while chars and chars[0] in ("#", "*"):
+            self.signature.append(chars.pop(0))
+        self.signature = tuple(self.signature)
+        self.level = len(self.signature)
+        self.item = InlineMarkup("".join(chars).strip())
+
+    def ordered(self, level):
+        return self.signature[level] == "#"
+
+    def list_tag(self, level):
+        if self.ordered(level):
+            return "ol"
+        else:
+            return "ul"
+
+    def compatible(self, other):
+        m = min(len(self.signature), len(other.signature))
+        return self.signature[0:m] == other.signature[0:m]
+
+    def __html__(self):
+        out = HTMLOutputStream()
+        out.element("li", html=self.item.__html__())
+        return out.__html__()
+
+
 class TableRowMarkup(object):
 
     def __init__(self, markup):
@@ -365,10 +397,10 @@ class Markup(object):
                 line = line.rstrip()
                 #heading = HEADING.match(line)
                 #horizontal_rule = HORIZONTAL_RULE.match(line)
-                ordered_list = ORDERED_LIST.match(line)
+                #ordered_list = ORDERED_LIST.match(line)
                 preformatted = PREFORMATTED.match(line)
                 block_code = BLOCK_CODE.match(line)
-                unordered_list = UNORDERED_LIST.match(line)
+                #unordered_list = UNORDERED_LIST.match(line)
                 #table = TABLE.match(line)
                 if line.startswith("="):
                     self._append_block(block, params, lines)
@@ -378,26 +410,18 @@ class Markup(object):
                     self._append_block(block, params, lines)
                     block, params, lines = None, None, []
                     self.blocks.append((HORIZONTAL_RULE, None, [HorizontalRuleMarkup(line)]))
-                elif ordered_list:
-                    if block is ORDERED_LIST:
-                        params.append(len(ordered_list.group(1)))
-                        lines.append(ordered_list.group(2))
-                    else:
+                elif line.startswith("#") or line.startswith("*"):
+                    markup = ListItemMarkup(line)
+                    if not lines or not isinstance(lines[0], ListItemMarkup) or not lines[0].compatible(markup):
                         self._append_block(block, params, lines)
-                        block, params, lines = ORDERED_LIST, [len(ordered_list.group(1))], [ordered_list.group(2)]
+                        block, params, lines = ORDERED_LIST, None, []
+                    lines.append(markup)
                 elif preformatted:
                     self._append_block(block, params, lines)
                     block, params, lines = PREFORMATTED, preformatted.group(2).split(), []
                 elif block_code:
                     self._append_block(block, params, lines)
                     block, params, lines = BLOCK_CODE, block_code.group(2).split(), []
-                elif unordered_list:
-                    if block is UNORDERED_LIST:
-                        params.append(len(unordered_list.group(1)))
-                        lines.append(unordered_list.group(2))
-                    else:
-                        self._append_block(block, params, lines)
-                        block, params, lines = UNORDERED_LIST, [len(unordered_list.group(1))], [unordered_list.group(2)]
                 elif line.startswith("|"):
                     if block is not TABLE:
                         self._append_block(block, params, lines)
@@ -449,22 +473,18 @@ class Markup(object):
                     out.element("code", text=line)
                     out.end_tag("li")
                 out.end_tag("pre")
-            elif block in (ORDERED_LIST, UNORDERED_LIST):
-                if block is ORDERED_LIST:
-                    tag = "ol"
-                else:
-                    tag = "ul"
+            elif block is ORDERED_LIST:
                 level = 0
                 for i, line in enumerate(lines):
-                    while level > params[i]:
-                        out.end_tag(tag)
+                    while level > line.level:
+                        out.end_tag()
                         level -= 1
-                    while level < params[i]:
-                        out.start_tag(tag)
+                    while level < line.level:
+                        out.start_tag(line.list_tag(level))
                         level += 1
-                    out.element("li", html=InlineMarkup(line).__html__())
+                    out.write_html(line.__html__())
                 for i in range(level):
-                    out.end_tag(tag)
+                    out.end_tag()
             elif block is TABLE:
                 out.start_tag("table", {"cellspacing": 0})
                 for line in lines:
