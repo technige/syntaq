@@ -312,6 +312,30 @@ class ListItemMarkup(object):
         return out.__html__()
 
 
+class PreformattedMarkup(object):
+
+    def __init__(self, markup):
+        self.text = markup
+
+    def __html__(self):
+        out = HTMLOutputStream()
+        out.write_text(self.text)
+        return out.__html__()
+
+
+class LineOfCodeMarkup(object):
+
+    def __init__(self, markup):
+        self.line = markup
+
+    def __html__(self):
+        out = HTMLOutputStream()
+        out.start_tag("li")
+        out.element("code", text=self.line)
+        out.end_tag()
+        return out.__html__()
+
+
 class TableRowMarkup(object):
 
     def __init__(self, markup):
@@ -386,13 +410,13 @@ class Markup(object):
                     self._append_block(block, params, lines)
                     block, params, lines = None, None, []
                 else:
-                    lines.append(line)
+                    lines.append(PreformattedMarkup(line))
             elif block is BLOCK_CODE:
                 if line.startswith("```"):
                     self._append_block(block, params, lines)
                     block, params, lines = None, None, []
                 else:
-                    lines.append(line)
+                    lines.append(LineOfCodeMarkup(line))
             else:
                 line = line.rstrip()
                 #heading = HEADING.match(line)
@@ -460,7 +484,7 @@ class Markup(object):
                 else:
                     out.start_tag("pre")
                 for line in lines:
-                    out.write_text(line)
+                    out.write_html(line.__html__())
                 out.end_tag("pre")
             elif block is BLOCK_CODE:
                 if params:
@@ -469,9 +493,7 @@ class Markup(object):
                     out.start_tag("pre")
                 out.start_tag("ol")
                 for line in lines:
-                    out.start_tag("li")
-                    out.element("code", text=line)
-                    out.end_tag("li")
+                    out.write_html(line.__html__())
                 out.end_tag("pre")
             elif block is ORDERED_LIST:
                 level = 0

@@ -159,7 +159,28 @@ class PreformattedTester(unittest.TestCase):
     def test_all(self):
         for (markup, expected_html) in self.tests:
             actual_html = Markup(markup).__html__()
-            assert actual_html == expected_html
+            try:
+                assert actual_html == expected_html
+            except AssertionError as err:
+                print(markup + "\n" + actual_html + " != " + expected_html)
+                raise err
+
+
+class CodeBlockTester(unittest.TestCase):
+
+    tests = [
+        ("```\nfoo\n```", "<pre><ol><li><code>foo\n</code></li></ol></pre>"),
+        ("```\nfoo\nbar\n```", "<pre><ol><li><code>foo\n</code></li><li><code>bar\n</code></li></ol></pre>"),
+    ]
+
+    def test_all(self):
+        for (markup, expected_html) in self.tests:
+            actual_html = Markup(markup).__html__()
+            try:
+                assert actual_html == expected_html
+            except AssertionError as err:
+                print(markup + "\n" + actual_html + " != " + expected_html)
+                raise err
 
 
 if __name__ == "__main__":
