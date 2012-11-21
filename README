@@ -1,0 +1,17 @@
+Syntaq
+
+Syntaq is a lightweight markup language based on (and backward compatible with)
+Creole. The package comes with a Python/Jython module which allows compilation
+of markup to HTML.
+
+On top of standard Creole notation, Syntaq also supports the following:
+
+* Subscript and superscript
+* Inline and block quotations
+* Inline and block computer code
+* HTML class values on preformatted and code blocks
+* Table cell alignment
+
+----
+
+For full details, see the README.syntaq file.
