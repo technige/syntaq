@@ -1,11 +1,11 @@
 = Syntaq
 
 Syntaq is a lightweight markup language based on (and backward compatible with)
-Creole.
+Creole and comes with a Python/Jython module which compiles markup to HTML.
 
 == Usage
 
-=== Python
+=== Python/Jython
 ``` python
 from syntaq import Markup
 print(Markup("hello, **world**").__html__())
