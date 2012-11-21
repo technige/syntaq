@@ -12,6 +12,11 @@ On top of standard Creole notation, Syntaq also supports the following:
 * HTML class values on preformatted and code blocks
 * Table cell alignment
 
+== Installation
+
+Syntaq comes as a single module with no external dependencies and can therefore
+be easily dropped into any project.
+
 == Usage
 
 === Python/Jython
