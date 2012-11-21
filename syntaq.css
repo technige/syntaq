@@ -97,6 +97,14 @@ a {
 a:hover {
     text-decoration: underline;
 }
+.hashtag {
+    color: #009F6B;
+    text-decoration: none;
+    cursor: pointer;
+}
+.hashtag:hover {
+    text-decoration: underline;
+}
 
 pre {
     display: block;
