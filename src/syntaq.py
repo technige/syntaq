@@ -412,6 +412,29 @@ class TableRowMarkup(object):
         return out.__html__()
 
 
+class Block(object):
+
+    def __init__(self, content_type=InlineMarkup, params=None, items=None):
+        self.content_type = content_type
+        self.params = params
+        self.items = []
+        if items:
+            for item in items:
+                self.append(item)
+
+    def __len__(self):
+        return len(self.items)
+
+    def __nonzero__(self):
+        return bool(self.items)
+
+    def append(self, item):
+        if isinstance(item, self.content_type):
+            self.items.append(item)
+        else:
+            raise ValueError("Cannot add {0} to block of {1}".format(item.__class__.__name__, self.content_type.__name__))
+
+
 class Markup(object):
 
     def __init__(self, markup):
