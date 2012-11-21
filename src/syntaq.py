@@ -414,7 +414,7 @@ class TableRowMarkup(object):
 
 class Block(object):
 
-    def __init__(self, content_type=InlineMarkup, params=None, items=None):
+    def __init__(self, content_type=None, params=None, items=None):
         self.content_type = content_type
         self.params = params
         self.items = []
@@ -429,7 +429,7 @@ class Block(object):
         return bool(self.items)
 
     def append(self, item):
-        if isinstance(item, self.content_type):
+        if not self.content_type or isinstance(item, self.content_type):
             self.items.append(item)
         else:
             raise ValueError("Cannot add {0} to block of {1}".format(item.__class__.__name__, self.content_type.__name__))
