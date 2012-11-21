@@ -113,7 +113,18 @@ code {
     background-color: #E7E7E7;
 }
 
+ul {
+	list-style: disc inside;
+	margin-left: 1em;
+}
+
+ol {
+	list-style: decimal inside;
+	margin-left: 1em;
+}
+
 pre>ol {
+    list-style: none;
 	list-style-type: decimal;
 	margin-left: 3em;
 	background-color: inherit;
@@ -130,10 +141,6 @@ pre>ol>li>code {
 	background-color: inherit;
 }
 
-ul {
-	list-style: disc inside;
-	margin-left: 1em;
-}
 table {
     border-collapse: collapse;
     margin: .75em 0 .75em;

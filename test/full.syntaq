@@ -128,7 +128,7 @@ Linked image:
 
 Tables are done like this:
 
-|=|=Column 1|=Column 2|
+|=|=Column 1 |= Column 2|
 |=Row 1|some really big content to make sure| there's room to demonstrate alignment|
 |=Row 2|default alignment|  right-aligned|
 |=Row 3|   centralised   |left-aligned   |

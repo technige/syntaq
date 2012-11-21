@@ -285,7 +285,7 @@ class ListItemMarkup(object):
     def __init__(self, markup):
         if not (markup.startswith("#") or markup.startswith("*")):
             raise ValueError("List items must start with either '#' or '*'")
-        chars = list(markup.rstrip())
+        chars = list(markup)
         self.signature = []
         while chars and chars[0] in ("#", "*"):
             self.signature.append(chars.pop(0))
@@ -419,6 +419,7 @@ class Markup(object):
                     lines.append(LineOfCodeMarkup(line))
             else:
                 line = line.rstrip()
+                stripped_line = line.lstrip()
                 #heading = HEADING.match(line)
                 #horizontal_rule = HORIZONTAL_RULE.match(line)
                 #ordered_list = ORDERED_LIST.match(line)
@@ -434,8 +435,8 @@ class Markup(object):
                     self._append_block(block, params, lines)
                     block, params, lines = None, None, []
                     self.blocks.append((HORIZONTAL_RULE, None, [HorizontalRuleMarkup(line)]))
-                elif line.startswith("#") or line.startswith("*"):
-                    markup = ListItemMarkup(line)
+                elif stripped_line.startswith("#") or stripped_line.startswith("*"):
+                    markup = ListItemMarkup(stripped_line)
                     if not lines or not isinstance(lines[0], ListItemMarkup) or not lines[0].compatible(markup):
                         self._append_block(block, params, lines)
                         block, params, lines = ORDERED_LIST, None, []
