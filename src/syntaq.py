@@ -20,6 +20,146 @@ import re
 import string
 
 
+SYNTAQ_CSS = """\
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, font, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	outline: 0;
+	font-weight: inherit;
+	font-style: inherit;
+	font-size: 100%;
+    font-family: inherit;
+	vertical-align: baseline;
+}
+/* remember to define focus styles! */
+:focus {
+	outline: 0;
+}
+html {
+    font-family: "Droid Sans", "Lucida Sans", "Trebuchet", sans-serif;
+    /* font-family: "Droid Serif", "Lucida Bright", "Georgia", serif; */
+    font-size: 12pt;
+	line-height: 150%;
+    background-color: #FBFBF7;
+    margin: 20px;
+}
+body {
+    font-family: "Droid Sans", "Lucida Sans", "Trebuchet", sans-serif;
+    /* font-family: "Droid Serif", "Lucida Bright", "Georgia", serif; */
+    font-size: 12pt;
+	line-height: 150%;
+    background-color: transparent;
+    color: #141410;
+}
+
+/* Headings */
+h1 { font-weight: bold; font-size: 200%; margin: .25em 0 .5em 0; }
+h2 { font-weight: bold; font-size: 150%; margin: .75em 0 .5em 0; padding-top: .75em; border-top: 1px solid #CCC; }
+h3 { font-weight: bold; font-size: 125%; margin: .75em 0 .5em 0; }
+h4 { font-weight: bold; font-size: 100%; margin: .75em 0 .5em 0; }
+h5 { font-weight: bold; font-size: 90%; margin: .75em 0 .5em 0; }
+h6 { font-weight: bold; font-size: 80%; margin: .75em 0 .5em 0; }
+
+code, pre, tt {
+    font-family: "Droid Sans Mono", "Lucida Sans Typewriter", "Andale Mono", monospace;
+    line-height: 150%;
+}
+
+ol {
+	list-style: decimal inside;
+	margin-left: 1em;
+}
+ul {
+	list-style: disc inside;
+	margin-left: 1em;
+}
+
+/* Tables */
+/* tables still need 'cellspacing="0"' in the markup */
+table {
+    border-collapse: collapse;
+    margin: .75em 0;
+	border-spacing: 0;
+}
+caption, th, td {
+	text-align: left;
+	font-weight: normal;
+    border: 1px solid #CCC;
+    padding: .25em .5em;
+}
+
+/* Quotations */
+blockquote:before, blockquote:after,
+q:before, q:after {
+	content: "";
+}
+blockquote, q {
+	quotes: "" "";
+}
+
+p { margin: .75em 0; }
+em { font-style: italic; }
+strong { font-weight: bold; }
+sup { font-size: .7em; position: relative; top: -.4em; }
+sub { font-size: .7em; position: relative; bottom: -.4em; }
+code {background-color: #E7E7E7;}
+
+a {
+    color: #0087BD;
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}
+.hashtag {
+    color: #009F6B;
+}
+
+/* Preformatted and code blocks */
+pre {
+    display: block;
+    background-color: #E7E7E7;
+    color: #222;
+    border: 1px solid #CCC;
+    margin: .75em 0;
+    padding: .5em .5em .5em .75em;
+    overflow: auto;
+    cursor: text;
+}
+pre>ol {
+    list-style: decimal outside;
+	margin-left: 3em;
+	background-color: inherit;
+}
+pre>ol>li {
+    border-left: 1px solid #BBB;
+}
+pre>ol>li:hover {
+    background-color: #D7D7D7;
+}
+pre>ol>li>code {
+    color: #222;
+	margin-left: 1em;
+	background-color: inherit;
+}
+"""
+
+DOCUMENT_TEMPLATE="""\
+<!doctype html>
+<html>
+<head><title>{title}</title><style type="text/css">{css}</style>{head}</head>
+<body>{body}</body>
+</html>
+"""
+
 URL = re.compile(r"""(?i)\b((?:[a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))""")
 
 
@@ -432,6 +572,8 @@ class Markup(object):
 
     def __init__(self, markup):
         self.blocks = []
+        self.title = None
+        title_level = 7
         block = Block()
         for line in markup.splitlines(True):
             if block.content_type is PreformattedMarkup:
@@ -452,7 +594,10 @@ class Markup(object):
                 if line.startswith("="):
                     self.append(block)
                     block = Block()
-                    self.blocks.append(Block(HeadingMarkup, lines=[HeadingMarkup(line)]))
+                    markup = HeadingMarkup(line)
+                    self.blocks.append(Block(HeadingMarkup, lines=[markup]))
+                    if not self.title or markup.level < title_level:
+                        self.title, title_level = markup.text, markup.level
                 elif line.startswith("----"):
                     self.append(block)
                     block = Block()
@@ -531,15 +676,32 @@ class Markup(object):
         return out.__html__()
 
 
+class StyleSheet(object):
+
+    def __init__(self):
+        pass
+
+    def __css__(self):
+        return SYNTAQ_CSS
+
+
+class Document(object):
+
+    def __init__(self, markup):
+        self.markup = Markup(markup)
+
+    def __html__(self):
+        return DOCUMENT_TEMPLATE.format(
+            title=self.markup.title or "",
+            css=StyleSheet().__css__(),
+            head="",
+            body=self.markup.__html__(),
+        )
+
+
 if __name__ == "__main__":
     import codecs
     import sys
-    import os
     if len(sys.argv) > 1:
         markup = codecs.open(sys.argv[1], "r", "UTF-8").read()
-        css = open(os.path.join(os.path.dirname(__file__), "..", "syntaq.css")).read()
-        print("<!doctype html>\n<html>\n<head>")
-        print("<style type=\"text/css\">" + css + "</style>")
-        print("</head>\n<body>\n")
-        print(Markup(markup).__html__())
-        print("</body>\n</html>")
+        print(Document(markup).__html__())
