@@ -13,30 +13,67 @@ table, caption, tbody, tfoot, thead, tr, th, td {
 	font-weight: inherit;
 	font-style: inherit;
 	font-size: 100%;
-	font-family: inherit;
+    font-family: inherit;
 	vertical-align: baseline;
 }
 /* remember to define focus styles! */
 :focus {
 	outline: 0;
 }
+html {
+    font-family: "Droid Sans", "Lucida Sans", "Trebuchet", sans-serif;
+    /* font-family: "Droid Serif", "Lucida Bright", "Georgia", serif; */
+    font-size: 12pt;
+	line-height: 150%;
+    background-color: #FBFBF7;
+    margin: 20px;
+}
 body {
-	line-height: 1;
-	color: black;
-	background: white;
+    font-family: "Droid Sans", "Lucida Sans", "Trebuchet", sans-serif;
+    /* font-family: "Droid Serif", "Lucida Bright", "Georgia", serif; */
+    font-size: 12pt;
+	line-height: 150%;
+    background-color: transparent;
+    color: #141410;
 }
-ol, ul {
-	list-style: none;
+
+/* Headings */
+h1 { font-weight: bold; font-size: 200%; margin: .25em 0 .5em 0; }
+h2 { font-weight: bold; font-size: 150%; margin: .75em 0 .5em 0; padding-top: .75em; border-top: 1px solid #CCC; }
+h3 { font-weight: bold; font-size: 125%; margin: .75em 0 .5em 0; }
+h4 { font-weight: bold; font-size: 100%; margin: .75em 0 .5em 0; }
+h5 { font-weight: bold; font-size: 90%; margin: .75em 0 .5em 0; }
+h6 { font-weight: bold; font-size: 80%; margin: .75em 0 .5em 0; }
+
+code, pre, tt {
+    font-family: "Droid Sans Mono", "Lucida Sans Typewriter", "Andale Mono", monospace;
+    line-height: 150%;
 }
+
+ol {
+	list-style: decimal inside;
+	margin-left: 1em;
+}
+ul {
+	list-style: disc inside;
+	margin-left: 1em;
+}
+
+/* Tables */
 /* tables still need 'cellspacing="0"' in the markup */
 table {
-	border-collapse: separate;
+    border-collapse: collapse;
+    margin: .75em 0;
 	border-spacing: 0;
 }
 caption, th, td {
 	text-align: left;
 	font-weight: normal;
+    border: 1px solid #CCC;
+    padding: .25em .5em;
 }
+
+/* Quotations */
 blockquote:before, blockquote:after,
 q:before, q:after {
 	content: "";
@@ -45,50 +82,12 @@ blockquote, q {
 	quotes: "" "";
 }
 
-/*
-"Droid Serif", "Lucida Bright", "Georgia", serif;
-"Droid Sans", "Lucida Sans", "Trebuchet", sans-serif;
-"Droid Sans Mono", "Lucida Sans Typewriter", "Andale Mono", monospace;
-*/
-
-html, body {
-    font-family: "Droid Sans", "Lucida Sans", "Trebuchet", sans-serif;
-    font-size: 11pt;
-    line-height: 150%;
-}
-
-code, pre, tt {
-    font-family: "Droid Sans Mono", "Lucida Sans Typewriter", "Andale Mono", monospace;
-    font-size: 11pt;
-    line-height: 150%;
-}
-
-h1 { font-weight: bold; font-size: 200%; margin: .25em 0 .5em 0; }
-h2 { font-weight: bold; font-size: 150%; margin: .75em 0 .5em 0; padding-top: .75em; border-top: 1px solid #CCC; }
-h3 { font-weight: bold; font-size: 125%; margin: .75em 0 .5em 0; }
-h4 { font-weight: bold; font-size: 100%; margin: .75em 0 .5em 0; }
-h5 { font-weight: bold; font-size: 90%; margin: .75em 0 .5em 0; }
-h6 { font-weight: bold; font-size: 80%; margin: .75em 0 .5em 0; }
-
-html {
-    background-color: #FBFBF7;
-    margin: 20px;
-}
-
-body {
-    margin: 0 0 0 0;
-    background-color: transparent;
-    color: #141410;
-}
-
-p {
-    margin: .75em 0 .75em;
-}
-
+p { margin: .75em 0 .75em; }
 em { font-style: italic; }
 strong { font-weight: bold; }
 sup { font-size: .7em; position: relative; top: -.4em; }
 sub { font-size: .7em; position: relative; bottom: -.4em; }
+code {background-color: #E7E7E7;}
 
 a {
     color: #0087BD;
@@ -99,13 +98,9 @@ a:hover {
 }
 .hashtag {
     color: #009F6B;
-    text-decoration: none;
-    cursor: pointer;
-}
-.hashtag:hover {
-    text-decoration: underline;
 }
 
+/* Preformatted and code blocks */
 pre {
     display: block;
     background-color: #E7E7E7;
@@ -116,24 +111,8 @@ pre {
     overflow: auto;
     cursor: text;
 }
-
-code {
-    background-color: #E7E7E7;
-}
-
-ul {
-	list-style: disc inside;
-	margin-left: 1em;
-}
-
-ol {
-	list-style: decimal inside;
-	margin-left: 1em;
-}
-
 pre>ol {
-    list-style: none;
-	list-style-type: decimal;
+    list-style: decimal outside;
 	margin-left: 3em;
 	background-color: inherit;
 }
@@ -149,11 +128,3 @@ pre>ol>li>code {
 	background-color: inherit;
 }
 
-table {
-    border-collapse: collapse;
-    margin: .75em 0 .75em;
-}
-table th, table td {
-    border: 1px solid #CCC;
-    padding: .25em .5em;
-}
