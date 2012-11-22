@@ -132,6 +132,24 @@ class InlineMarkupTester(unittest.TestCase):
         line = InlineMarkup("foo bar ~")
         assert line.__html__() == "foo bar ~"
 
+    def test_auto_link(self):
+        line = InlineMarkup("foo http://example.com/ bar")
+        assert line.__html__() == 'foo <a href="http://example.com/">http://example.com/</a> bar'
+
+    def test_auto_link_with_trailing_dot(self):
+        line = InlineMarkup("foo http://example.com/. bar")
+        assert line.__html__() == 'foo <a href="http://example.com/">http://example.com/</a>. bar'
+
+    def test_auto_link_in_angle_brackets(self):
+        markup = "foo <http://example.com/> bar"
+        expected_html = 'foo &lt;<a href="http://example.com/">http://example.com/</a>&gt; bar'
+        actual_html = InlineMarkup(markup).__html__()
+        try:
+            assert actual_html == expected_html
+        except AssertionError as err:
+            print(markup + "\n" + actual_html + " != " + expected_html)
+            raise err
+
 
 if __name__ == "__main__":
     unittest.main()

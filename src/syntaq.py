@@ -184,11 +184,11 @@ class HTML(object):
 
 class HTMLOutputStream(object):
 
-    def __init__(self, processors=None):
+    def __init__(self, processor=None):
         self.tokens = []
         self.stack = []
         self.token_buffer = []
-        self.processors = processors or []
+        self.processor = processor or HTML.entities
 
     def __html__(self):
         return "".join(self.tokens)
@@ -199,10 +199,8 @@ class HTMLOutputStream(object):
     def _flush(self):
         if self.token_buffer:
             buffer = "".join(self.token_buffer)
+            self.tokens.append(self.processor(buffer))
             self.token_buffer = []
-            for processor in self.processors:
-                buffer = processor[0].sub(processor[1], buffer)
-            self.tokens.append(buffer)
 
     def write_html(self, html):
         self._flush()
@@ -210,7 +208,7 @@ class HTMLOutputStream(object):
 
     def write_text(self, text, post_process=False):
         if post_process:
-            self.token_buffer.extend(HTML.entities(text))
+            self.token_buffer.extend(text)
         else:
             self._flush()
             self.tokens.extend(HTML.entities(text))
@@ -316,13 +314,18 @@ class InlineMarkup(object):
             src, alt = markup.partition("|")[0::2]
             out.tag("img", {"src": src, "alt": alt or None})
 
-        def link(match):
-            url = match.group(1)
-            if ":" in url:
-                href = url
-            else:
-                href = "http://" + url
-            return '<a href="{0}">{1}</a>'.format(href, url)
+        def auto_link(text):
+            out = HTMLOutputStream()
+            bits = URL.split(text)
+            out.write_text(bits[0])
+            p = 1
+            while p < len(bits):
+                url = bits[p]
+                out.element("a", {"href": url}, text=url)
+                p += 5
+                out.write_text(bits[p])
+                p += 1
+            return out.__html__()
 
         simple_tokens = {
             "\\\\": "<br>",
@@ -342,7 +345,7 @@ class InlineMarkup(object):
             "{{{": ("}}}", lambda out, markup: out.write_text(markup)),
         }
 
-        out = HTMLOutputStream(processors=[(URL, link)])
+        out = HTMLOutputStream(processor=auto_link)
         tokens = self.tokens[:]
         while tokens:
             token = tokens.pop(0)
