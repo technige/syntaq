@@ -95,7 +95,11 @@ class HorizontalRuleTester(unittest.TestCase):
     def test_all(self):
         for (markup, expected_html) in self.tests:
             actual_html = Markup(markup).__html__()
-            assert actual_html == expected_html
+            try:
+                assert actual_html == expected_html
+            except AssertionError as err:
+                print(actual_html + " != " + expected_html)
+                raise err
 
 
 class ListTester(unittest.TestCase):
@@ -170,6 +174,7 @@ class CodeBlockTester(unittest.TestCase):
 
     tests = [
         ("```\nfoo\n```", "<pre><ol><li><code>foo\n</code></li></ol></pre>"),
+        ("``` foo bar\nbaz\n```", "<pre class=\"foo bar\"><ol><li><code>baz\n</code></li></ol></pre>"),
         ("```\nfoo\nbar\n```", "<pre><ol><li><code>foo\n</code></li><li><code>bar\n</code></li></ol></pre>"),
     ]
 

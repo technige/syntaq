@@ -20,15 +20,8 @@ import re
 import string
 
 
-HEADING = re.compile(r"^(={1,6})\s*(.*[^=\s])\s*=*")
-HORIZONTAL_RULE = re.compile(r"^(-{4})")
-ORDERED_LIST = re.compile(r"^(#+)\s*(.*)")
-PREFORMATTED = re.compile(r"^(\{\{\{)\s*([-:\s\w]*)", re.UNICODE)
-BLOCK_CODE = re.compile(r"^(```)\s*([-:\s\w]*)", re.UNICODE)
-UNORDERED_LIST = re.compile(r"^(\*+)\s*(.*)")
-TABLE = re.compile(r"^(\|.*)")
-
 URL = re.compile(r"""(?i)\b((?:[a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))""")
+
 
 class HTML(object):
 
@@ -414,127 +407,112 @@ class TableRowMarkup(object):
 
 class Block(object):
 
-    def __init__(self, content_type=None, params=None, items=None):
+    def __init__(self, content_type=None, params=None, lines=None):
         self.content_type = content_type
         self.params = params
-        self.items = []
-        if items:
-            for item in items:
-                self.append(item)
+        self.lines = []
+        if lines:
+            for line in lines:
+                self.append(line)
 
     def __len__(self):
-        return len(self.items)
+        return len(self.lines)
 
     def __nonzero__(self):
-        return bool(self.items)
+        return bool(self.lines)
 
-    def append(self, item):
-        if not self.content_type or isinstance(item, self.content_type):
-            self.items.append(item)
+    def append(self, line):
+        if not self.content_type or isinstance(line, self.content_type):
+            self.lines.append(line)
         else:
-            raise ValueError("Cannot add {0} to block of {1}".format(item.__class__.__name__, self.content_type.__name__))
+            raise ValueError("Cannot add {0} to block of {1}".format(line.__class__.__name__, self.content_type.__name__))
 
 
 class Markup(object):
 
     def __init__(self, markup):
         self.blocks = []
-        block, params, lines = None, None, []
+        block = Block()
         for line in markup.splitlines(True):
-            if block is PREFORMATTED:
+            if block.content_type is PreformattedMarkup:
                 if line.startswith("}}}"):
-                    self._append_block(block, params, lines)
-                    block, params, lines = None, None, []
+                    self.append(block)
+                    block = Block()
                 else:
-                    lines.append(PreformattedMarkup(line))
-            elif block is BLOCK_CODE:
+                    block.lines.append(PreformattedMarkup(line))
+            elif block.content_type is LineOfCodeMarkup:
                 if line.startswith("```"):
-                    self._append_block(block, params, lines)
-                    block, params, lines = None, None, []
+                    self.append(block)
+                    block = Block()
                 else:
-                    lines.append(LineOfCodeMarkup(line))
+                    block.lines.append(LineOfCodeMarkup(line))
             else:
                 line = line.rstrip()
                 stripped_line = line.lstrip()
-                #heading = HEADING.match(line)
-                #horizontal_rule = HORIZONTAL_RULE.match(line)
-                #ordered_list = ORDERED_LIST.match(line)
-                preformatted = PREFORMATTED.match(line)
-                block_code = BLOCK_CODE.match(line)
-                #unordered_list = UNORDERED_LIST.match(line)
-                #table = TABLE.match(line)
                 if line.startswith("="):
-                    self._append_block(block, params, lines)
-                    block, params, lines = None, None, []
-                    self.blocks.append((HEADING, None, [HeadingMarkup(line)]))
+                    self.append(block)
+                    block = Block()
+                    self.blocks.append(Block(HeadingMarkup, lines=[HeadingMarkup(line)]))
                 elif line.startswith("----"):
-                    self._append_block(block, params, lines)
-                    block, params, lines = None, None, []
-                    self.blocks.append((HORIZONTAL_RULE, None, [HorizontalRuleMarkup(line)]))
+                    self.append(block)
+                    block = Block()
+                    self.blocks.append(Block(HorizontalRuleMarkup, lines=[HorizontalRuleMarkup(line)]))
                 elif stripped_line.startswith("#") or stripped_line.startswith("*"):
                     markup = ListItemMarkup(stripped_line)
-                    if not lines or not isinstance(lines[0], ListItemMarkup) or not lines[0].compatible(markup):
-                        self._append_block(block, params, lines)
-                        block, params, lines = ORDERED_LIST, None, []
-                    lines.append(markup)
-                elif preformatted:
-                    self._append_block(block, params, lines)
-                    block, params, lines = PREFORMATTED, preformatted.group(2).split(), []
-                elif block_code:
-                    self._append_block(block, params, lines)
-                    block, params, lines = BLOCK_CODE, block_code.group(2).split(), []
+                    if not (block and block.content_type is ListItemMarkup and block.lines[0].compatible(markup)):
+                        self.append(block)
+                        block = Block(ListItemMarkup)
+                    block.lines.append(markup)
+                elif line.startswith("{{{"):
+                    params = line.lstrip("{").strip().split()
+                    self.append(block)
+                    block = Block(PreformattedMarkup, params=params)
+                elif line.startswith("```"):
+                    params = line.lstrip("`").strip().split()
+                    self.append(block)
+                    block = Block(LineOfCodeMarkup, params=params)
                 elif line.startswith("|"):
-                    if block is not TABLE:
-                        self._append_block(block, params, lines)
-                        block, params, lines = TABLE, None, []
-                    lines.append(TableRowMarkup(line))
+                    if not block.content_type is TableRowMarkup:
+                        self.append(block)
+                        block = Block(TableRowMarkup)
+                    block.lines.append(TableRowMarkup(line))
                 else:
-                    if block:
-                        self._append_block(block, params, lines)
-                        block, params, lines = None, None, []
+                    if block.content_type is not None:
+                        self.append(block)
+                        block = Block()
                     if line:
-                        lines.append(line)
+                        block.lines.append(line)
                     else:
-                        if lines:
-                            self.blocks.append((block, params, lines))
-                            lines = []
-        self._append_block(block, params, lines)
+                        if block:
+                            self.blocks.append(block)
+                            block = Block()
+        self.append(block)
 
-    def _append_block(self, block, params, lines):
-        if block or lines:
-            self.blocks.append((block, params, lines))
+    def append(self, block):
+        if block:
+            self.blocks.append(block)
 
     def __html__(self):
         out = HTMLOutputStream()
-        for i, (block, params, lines) in enumerate(self.blocks):
-            if block is None:
-                out.element("p", html=InlineMarkup(" ".join(lines)).__html__())
-            elif block is HEADING:
-                for line in lines:
+        for block in self.blocks:
+            if block.content_type is None:
+                out.element("p", html=InlineMarkup(" ".join(block.lines)).__html__())
+            elif block.content_type in (HeadingMarkup, HorizontalRuleMarkup):
+                for line in block.lines:
                     out.write_html(line.__html__())
-            elif block is HORIZONTAL_RULE:
-                for line in lines:
-                    out.write_html(line.__html__())
-            elif block is PREFORMATTED:
-                if params:
-                    out.start_tag("pre", {"class": " ".join(params)})
+            elif block.content_type in (LineOfCodeMarkup, PreformattedMarkup):
+                if block.params:
+                    out.start_tag("pre", {"class": " ".join(block.params)})
                 else:
                     out.start_tag("pre")
-                for line in lines:
+                if block.content_type is LineOfCodeMarkup:
+                    out.start_tag("ol")
+                for line in block.lines:
                     out.write_html(line.__html__())
                 out.end_tag("pre")
-            elif block is BLOCK_CODE:
-                if params:
-                    out.start_tag("pre", {"class": " ".join(params)})
-                else:
-                    out.start_tag("pre")
-                out.start_tag("ol")
-                for line in lines:
-                    out.write_html(line.__html__())
-                out.end_tag("pre")
-            elif block is ORDERED_LIST:
+            elif block.content_type is ListItemMarkup:
                 level = 0
-                for i, line in enumerate(lines):
+                for line in block.lines:
                     while level > line.level:
                         out.end_tag()
                         level -= 1
@@ -542,11 +520,12 @@ class Markup(object):
                         out.start_tag(line.list_tag(level))
                         level += 1
                     out.write_html(line.__html__())
-                for i in range(level):
+                while level:
                     out.end_tag()
-            elif block is TABLE:
+                    level -= 1
+            elif block.content_type is TableRowMarkup:
                 out.start_tag("table", {"cellspacing": 0})
-                for line in lines:
+                for line in block.lines:
                     out.write_html(line.__html__())
                 out.end_tag("table")
         return out.__html__()
