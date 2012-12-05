@@ -44,6 +44,10 @@ class ParagraphTester(unittest.TestCase):
 class HeadingTester(unittest.TestCase):
 
     tests = [
+        ("=", "<h1></h1>"),
+        ("= ", "<h1></h1>"),
+        ("==", "<h2></h2>"),
+        ("== ", "<h2></h2>"),
         ("=foo", "<h1>foo</h1>"),
         ("=foo", "<h1>foo</h1>"),
         ("=foo=", "<h1>foo</h1>"),

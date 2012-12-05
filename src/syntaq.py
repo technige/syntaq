@@ -402,12 +402,12 @@ class HeadingMarkup(object):
     def __init__(self, markup):
         if not markup.startswith("="):
             raise ValueError("Heading must start with '='")
-        chars = list(markup.rstrip().rstrip("="))
+        chars = list(markup)
         self.level = 0
         while chars and chars[0] == "=":
             chars.pop(0)
             self.level += 1
-        self.text = "".join(chars).strip()
+        self.text = "".join(chars).strip().rstrip("=").rstrip()
         if self.level > 6:
             self.level = 6
 
