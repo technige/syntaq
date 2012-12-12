@@ -192,5 +192,21 @@ class CodeBlockTester(unittest.TestCase):
                 raise err
 
 
+class BlockQuoteTester(unittest.TestCase):
+
+    tests = [
+        ('"""\nfoo\n"""', '<blockquote>foo\n</blockquote>'),
+    ]
+
+    def test_all(self):
+        for (markup, expected_html) in self.tests:
+            actual_html = Markup(markup).__html__()
+            try:
+                assert actual_html == expected_html
+            except AssertionError as err:
+                print(markup + "\n" + actual_html + " != " + expected_html)
+                raise err
+
+
 if __name__ == "__main__":
     unittest.main()
