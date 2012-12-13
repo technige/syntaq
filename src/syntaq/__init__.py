@@ -19,6 +19,12 @@
 import re
 import string
 
+__author__    = "Nigel Small <nigel@nigelsmall.com>"
+__copyright__ = "Copyright 2012 Nigel Small"
+__license__   = "Apache License, Version 2.0"
+__package__   = "syntaq"
+__version__   = "0.8"
+
 
 SYNTAQ_CSS = """\
 html, body, div, span, applet, object, iframe,
