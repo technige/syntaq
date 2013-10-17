@@ -31,14 +31,11 @@ setup(
     version=syntaq_version,
     description="Lightweight markup language parser/compiler based on Creole",
     long_description="Syntaq is a lightweight markup language based on (and " \
-                     "backward compatible with) Creole. The package comes " \
-                     "with a Python/Jython module which allows compilation " \
-                     "of markup to HTML.",
+                     "backward compatible with) Creole.",
     author=syntaq_author,
     author_email="nigel@nigelsmall.com",
     url="http://nigelsmall.com/syntaq",
     scripts=[],
-    package_dir={"": "src"},
     packages=["syntaq"],
     license=syntaq_license,
     classifiers=[]
