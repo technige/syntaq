@@ -391,8 +391,8 @@ class TableRow(object):
             raise ValueError("Table row must start with '|'")
         bracket_tokens = {
             Code.INLINE_DELIMITER : Code.INLINE_DELIMITER,
-            "[[" : "]]",
-            "{{" : "}}",
+            "[[": "]]",
+            "{{": "}}",
             Preformatted.BLOCK_START: Preformatted.BLOCK_END,
         }
         partitioner = Partitioner("~", "|", Code.INLINE_DELIMITER, "[[", "]]",
@@ -533,7 +533,7 @@ class Syntaq(object):
                     self.append(block)
                     block = Block(Quote, params=params)
                 elif line.startswith("|"):
-                    if not block.content_type is TableRow:
+                    if block.content_type is not TableRow:
                         self.append(block)
                         block = Block(TableRow)
                     block.lines.append(TableRow(line))
