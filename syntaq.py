@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
+# -*- encoding: utf-8 -*-
 
-# Copyright 2011-2013 Nigel Small
+# Copyright 2011-2016 Nigel Small
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,6 +18,12 @@
 
 import re
 import string
+
+
+__author__ = "Nigel Small <nigel@nigelsmall.name>"
+__copyright__ = "2011-2016 Nigel Small"
+__license__ = "Apache License, Version 2.0"
+__version__ = "v2"
 
 
 URI_PATTERN = re.compile(r"""(?i)\b((?:[a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))""")
@@ -610,3 +616,11 @@ BRACKET_TOKENS = {
     "{{": ("}}", image_writer),
     Preformatted.BLOCK_START: (Preformatted.BLOCK_END, pre_writer),
 }
+
+
+if __name__ == "__main__":
+    import codecs
+    import sys
+    for arg in sys.argv:
+        markup = codecs.open(sys.argv[1], "r", "UTF-8").read()
+        sys.stdout.write(Syntaq(markup).html)
