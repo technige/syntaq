@@ -16,13 +16,10 @@
 # limitations under the License.
 
 
-from __future__ import unicode_literals
-
-
-__author__ = "Nigel Small <nigel@nigelsmall.com>"
-__copyright__ = "2011-2013 Nigel Small"
+__author__ = "Nigel Small <nigel@nigelsmall.name>"
+__copyright__ = "2011-2016 Nigel Small"
 __license__ = "Apache License, Version 2.0"
-__version__ = "1.0.0"
+__version__ = "v2"
 
 
 from .syntaq import *

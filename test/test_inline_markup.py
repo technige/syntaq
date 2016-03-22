@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import unittest
+from unittest import TestCase
 
 from syntaq import Text
 
 
-class InlineMarkupTester(unittest.TestCase):
+class InlineMarkupTestCase(TestCase):
 
     def test_no_content(self):
         line = Text("")
@@ -86,7 +86,7 @@ class InlineMarkupTester(unittest.TestCase):
 
     def test_image_with_alt(self):
         line = Text("foo {{bar.png|baz qux}}")
-        assert line.html == 'foo <img src="bar.png" alt="baz qux">'
+        assert line.html == 'foo <img alt="baz qux" src="bar.png">'
 
     def test_link(self):
         line = Text("foo [[bar]]")
@@ -149,7 +149,3 @@ class InlineMarkupTester(unittest.TestCase):
         except AssertionError as err:
             print(markup + "\n" + actual_html + " != " + expected_html)
             raise err
-
-
-if __name__ == "__main__":
-    unittest.main()

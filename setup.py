@@ -16,13 +16,10 @@
 # limitations under the License.
 
 
-import sys
-sys.path.insert(0, "src")
 from syntaq import __author__ as syntaq_author
 from syntaq import __license__ as syntaq_license
 from syntaq import __package__ as syntaq_package
 from syntaq import __version__ as syntaq_version
-sys.path.pop(0)
 
 from distutils.core import setup
 
@@ -33,7 +30,7 @@ setup(
     long_description="Syntaq is a lightweight markup language based on (and " \
                      "backward compatible with) Creole.",
     author=syntaq_author,
-    author_email="nigel@nigelsmall.com",
+    author_email="nigel@nigelsmall.name",
     url="http://nigelsmall.com/syntaq",
     scripts=[],
     packages=["syntaq"],

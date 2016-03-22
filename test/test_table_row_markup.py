@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import unittest
+from unittest import TestCase
 
 from syntaq import TableRow
 
 
-class TableRowMarkupTester(unittest.TestCase):
+class TableRowMarkupTestCase(TestCase):
 
     def test_single_cell(self):
         line = TableRow("|foo")
@@ -122,23 +122,20 @@ class TableRowMarkupTester(unittest.TestCase):
 
     def test_cell_with_image_and_alt(self):
         line = TableRow("|{{foo.jpg|bar}}|")
-        assert line.html == '<tr><td><img src="foo.jpg" alt="bar"></td></tr>'
+        assert line.html == '<tr><td><img alt="bar" src="foo.jpg"></td></tr>'
 
     def test_cell_with_link_and_image(self):
         line = TableRow("|[[foo|{{bar.jpg|baz}}]]|")
-        assert line.html == '<tr><td><a href="foo"><img src="bar.jpg" alt="baz"></a></td></tr>'
+        assert line.html == '<tr><td><a href="foo"><img alt="baz" src="bar.jpg"></a></td></tr>'
 
     def test_cell_with_unclosed_brackets(self):
         line = TableRow("|[[foo|{{bar.jpg|baz|")
-        assert line.html == '<tr><td><a href="foo"><img src="bar.jpg" alt="baz"></a></td></tr>'
+        assert line.html == '<tr><td><a href="foo"><img alt="baz" src="bar.jpg"></a></td></tr>'
 
     def test_cells_with_multiple_brackets(self):
-        line = TableRow("|[[foo]]|[[foo~|bar]]|[[foo|bar]]|``foo|bar``|{{{foo|bar}}}|{{foo.jpg|bar}}|[[foo|{{bar.jpg|baz}}]]|")
-        assert line.html == '<tr><td><a href="foo">foo</a></td><td><a href="foo|bar">foo|bar</a></td><td>' \
-                                 '<a href="foo">bar</a></td><td><code>foo|bar</code></td><td>foo|bar</td><td>' \
-                                 '<img src="foo.jpg" alt="bar"></td><td><a href="foo"><img src="bar.jpg" alt="baz">' \
-                                 '</a></td></tr>'
-
-
-if __name__ == "__main__":
-    unittest.main()
+        line = TableRow("|[[foo]]|[[foo~|bar]]|[[foo|bar]]|``foo|bar``|{{{foo|bar}}}|{{foo.jpg|bar}}|"
+                        "[[foo|{{bar.jpg|baz}}]]|")
+        assert line.html == ('<tr><td><a href="foo">foo</a></td><td><a href="foo|bar">foo|bar</a></td><td>'
+                             '<a href="foo">bar</a></td><td><code>foo|bar</code></td><td>foo|bar</td><td>'
+                             '<img alt="bar" src="foo.jpg"></td><td><a href="foo"><img alt="baz" src="bar.jpg">'
+                             '</a></td></tr>')

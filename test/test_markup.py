@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import unittest
+from unittest import TestCase
 
 from syntaq import Syntaq, Heading
 
 
-class ParagraphTester(unittest.TestCase):
+class ParagraphTestCase(TestCase):
     
     tests = [
         ("foo bar", "<p>foo bar</p>"),
@@ -31,7 +31,8 @@ class ParagraphTester(unittest.TestCase):
         ("//foo\n\n//bar", "<p><em>foo</em></p><p><em>bar</em></p>"),
         ("E=mc^^2^^", "<p>E=mc<sup>2</sup></p>"),
         ("H,,2,,SO,,4,,", "<p>H<sub>2</sub>SO<sub>4</sub></p>"),
-        ("Here is some code: ``print \"hello, world\"``", "<p>Here is some code: <code>print &quot;hello, world&quot;</code></p>"),
+        ("Here is some code: ``print \"hello, world\"``",
+         "<p>Here is some code: <code>print &quot;hello, world&quot;</code></p>"),
         ("Here is some more code: ``print 2 ** 3``", "<p>Here is some more code: <code>print 2 ** 3</code></p>"),
     ]
 
@@ -41,7 +42,7 @@ class ParagraphTester(unittest.TestCase):
             assert actual_html == expected_html
 
 
-class HeadingTester(unittest.TestCase):
+class HeadingTestCase(TestCase):
 
     tests = [
         ("=", "<h1></h1>"),
@@ -88,7 +89,7 @@ class HeadingTester(unittest.TestCase):
                 raise err
 
 
-class HorizontalRuleTester(unittest.TestCase):
+class HorizontalRuleTestCase(TestCase):
 
     tests = [
         ("foo\n---\nbar", "<p>foo --- bar</p>"),
@@ -106,7 +107,7 @@ class HorizontalRuleTester(unittest.TestCase):
                 raise err
 
 
-class ListTester(unittest.TestCase):
+class ListTestCase(TestCase):
 
     tests = [
         ("* foo\n* bar", "<ul><li>foo</li><li>bar</li></ul>"),
@@ -139,7 +140,7 @@ class ListTester(unittest.TestCase):
                 raise err
 
 
-class PreformattedTester(unittest.TestCase):
+class PreformattedTestCase(TestCase):
 
     tests = [
         ("{{{\nfoo\n}}}", "<pre>foo\n</pre>"),
@@ -174,7 +175,7 @@ class PreformattedTester(unittest.TestCase):
                 raise err
 
 
-class CodeBlockTester(unittest.TestCase):
+class CodeBlockTestCase(TestCase):
 
     tests = [
         ("```\nfoo\n```", "<pre><ol><li><code>foo\n</code></li></ol></pre>"),
@@ -192,7 +193,7 @@ class CodeBlockTester(unittest.TestCase):
                 raise err
 
 
-class BlockQuoteTester(unittest.TestCase):
+class BlockQuoteTestCase(TestCase):
 
     tests = [
         ('"""\nfoo\n"""', '<blockquote>foo\n</blockquote>'),
@@ -206,7 +207,3 @@ class BlockQuoteTester(unittest.TestCase):
             except AssertionError as err:
                 print(markup + "\n" + actual_html + " != " + expected_html)
                 raise err
-
-
-if __name__ == "__main__":
-    unittest.main()

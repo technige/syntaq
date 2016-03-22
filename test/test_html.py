@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import unittest
+from unittest import TestCase
 
 from syntaq import HTML
 
 
-class HTMLOutputStreamTester(unittest.TestCase):
+class HTMLOutputStreamTestCase(TestCase):
 
     def test_can_write_text(self):
         out = HTML()
@@ -126,7 +126,3 @@ class HTMLOutputStreamTester(unittest.TestCase):
         out.end_tag("foo")
         out.write_html("<baz>qux</baz>")
         assert str(out) == "<foo>bar</foo><baz>qux</baz>"
-
-
-if __name__ == "__main__":
-    unittest.main()

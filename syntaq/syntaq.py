@@ -16,8 +16,6 @@
 # limitations under the License.
 
 
-from __future__ import unicode_literals
-
 import re
 import string
 
@@ -114,7 +112,7 @@ class HTML(object):
                 tag,
                 " ".join(
                     '{0}="{1}"'.format(key, HTML.entities(str(value)))
-                    for key, value in attributes.items()
+                    for key, value in sorted(attributes.items())
                     if value is not None
                 )
             ))

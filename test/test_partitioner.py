@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import unittest
+from unittest import TestCase
 
 from syntaq import Partitioner
 
 
-class PartitionerTester(unittest.TestCase):
+class PartitionerTestCase(TestCase):
 
     def test_can_partition_with_marker(self):
         t = Partitioner("~", "**")
@@ -37,7 +37,3 @@ class PartitionerTester(unittest.TestCase):
         t = Partitioner("~", "**")
         tokens = list(t.partition("foo~bar"))
         assert tokens == ["foo~bar"]
-
-
-if __name__ == "__main__":
-    unittest.main()
