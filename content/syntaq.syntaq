@@ -1,4 +1,4 @@
-= Syntaq
+= Syntaq Markup Language
 
 **Syntaq** is a small publishing platform for static content that comes with its own simple and easy-to-learn markup language, based on [[http://www.wikicreole.org|Creole]].
 
@@ -14,12 +14,73 @@ As with HTML, six levels of heading are supported. To denote a heading, simply b
 }}}
 
 
-== Bold & Italic
+== Emphasis
 
-Bold and italicised text are denoted by surrounding text with pairs of asterisks or forward slashes respectively.
-The table below shows
+Bold and italic emphasis can be applied by surrounding text with pairs of asterisks or forward slashes respectively.
+The table below shows a few combinations:
 
-|= Source                                             |= Result             |
-|``hello, **world**``                                 |hello, **world**     |
-|``hello, //world//``                                 |hello, //world//     |
-|``hello, **//world//**`` \\ ``hello, //**world**//`` |hello, **//world//** |
+|``hello, **world**``                                 | --> |hello, **world**     |
+|``hello, //world//``                                 | --> |hello, //world//     |
+|``hello, **//world//**`` \\ ``hello, //**world**//`` | --> |hello, **//world//** |
+
+Note that while emphasis is continued across lines within the //same// paragraph, it does not continue into new paragraphs.
+
+
+== Subscript & Superscript
+
+
+== Quotations
+
+== Code
+
+Backticks will create ``code`` tags which can also be inside ``pre`` tags.
+``` brush: js
+// this will return the maximum of a & b
+var max = function(a, b) {
+    if (a<b) {
+        return b;
+    } else {
+        return a;
+    }
+}
+```
+
+
+== Links
+* Explicit
+* Auto-detected
+
+== Images
+
+== Lists
+
+== Line Breaks
+
+== Horizontal Rules
+
+== Tables
+
+== Literal Blocks & Escaping
+
+You can use nowiki syntax if you would like do stuff like this:
+
+{{{
+Guitar Chord C:
+
+||---|---|---|
+||-0-|---|---|
+||---|---|---|
+||---|-0-|---|
+||---|---|-0-|
+||---|---|---|
+}}}
+
+Literal stuff can be {{{*inline*}}} as well.
+
+Normal Link: http://wikicreole.org/ - now same link, but escaped: ~http://wikicreole.org/
+
+Normal asterisks: ~**not bold~**
+
+a tilde alone: ~
+
+a tilde escapes itself: ~~xxx
