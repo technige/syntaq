@@ -18,7 +18,7 @@
 
 from unittest import TestCase
 
-from syntaq import Syntaq, Heading
+from syntaq import Document, Heading
 
 
 class ParagraphTestCase(TestCase):
@@ -53,7 +53,7 @@ class ParagraphTestCase(TestCase):
 
     def test_all(self):
         for (markup, expected_html) in self.tests:
-            actual_html = Syntaq(markup).html
+            actual_html = Document(markup).html
             assert actual_html == expected_html
 
 
@@ -114,7 +114,7 @@ class HorizontalRuleTestCase(TestCase):
 
     def test_all(self):
         for (markup, expected_html) in self.tests:
-            actual_html = Syntaq(markup).html
+            actual_html = Document(markup).html
             try:
                 assert actual_html == expected_html
             except AssertionError as err:
@@ -139,15 +139,15 @@ class ListTestCase(TestCase):
         ("* foo\n*# bar\n", "<ul><li>foo</li><ol><li>bar</li></ol></ul>"),
         ("* foo\n** bar\n", "<ul><li>foo</li><ul><li>bar</li></ul></ul>"),
         ("* foo\n#* bar\n", "<ul><li>foo</li></ul><ol><ul><li>bar</li></ul></ol>"),
-        ("## foo\n# bar\n", "<ol><ol><li>foo</li></ol><li>bar</li></ol>"),
-        ("*# foo\n# bar\n", "<ul><ol><li>foo</li></ol></ul><ol><li>bar</li></ol>"),
-        ("** foo\n# bar\n", "<ul><ul><li>foo</li></ul></ul><ol><li>bar</li></ol>"),
-        ("#* foo\n# bar\n", "<ol><ul><li>foo</li></ul><li>bar</li></ol>"),
+        ("# foo\n## bar\n# baz\n", "<ol><li>foo</li><ol><li>bar</li></ol><li>baz</li></ol>"),
+        ("* foo\n*# foo\n# bar\n", "<ul><li>foo</li><ol><li>foo</li></ol></ul><ol><li>bar</li></ol>"),
+        ("* foo\n** foo\n# bar\n", "<ul><li>foo</li><ul><li>foo</li></ul></ul><ol><li>bar</li></ol>"),
+        ("# foo\n#* foo\n# bar\n", "<ol><li>foo</li><ul><li>foo</li></ul><li>bar</li></ol>"),
     ]
 
     def test_all(self):
         for (markup, expected_html) in self.tests:
-            actual_html = Syntaq(markup).html
+            actual_html = Document(markup).html
             try:
                 assert actual_html == expected_html
             except AssertionError as err:
@@ -182,7 +182,7 @@ class PreformattedTestCase(TestCase):
 
     def test_all(self):
         for (markup, expected_html) in self.tests:
-            actual_html = Syntaq(markup).html
+            actual_html = Document(markup).html
             try:
                 assert actual_html == expected_html
             except AssertionError as err:
@@ -200,7 +200,7 @@ class CodeBlockTestCase(TestCase):
 
     def test_all(self):
         for (markup, expected_html) in self.tests:
-            actual_html = Syntaq(markup).html
+            actual_html = Document(markup).html
             try:
                 assert actual_html == expected_html
             except AssertionError as err:
@@ -216,7 +216,7 @@ class BlockQuoteTestCase(TestCase):
 
     def test_all(self):
         for (markup, expected_html) in self.tests:
-            actual_html = Syntaq(markup).html
+            actual_html = Document(markup).html
             try:
                 assert actual_html == expected_html
             except AssertionError as err:

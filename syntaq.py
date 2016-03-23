@@ -19,6 +19,8 @@
 import re
 import string
 
+from bottle import abort, get, run, static_file, template
+
 
 __author__ = "Nigel Small <nigel@nigelsmall.name>"
 __copyright__ = "2011-2016 Nigel Small"
@@ -43,21 +45,21 @@ def auto_link(text):
     return out.html
 
 
-def code_writer(out, markup):
-    return out.element("code", text=markup)
+def code_writer(out, source):
+    return out.element("code", text=source)
 
 
-def image_writer(out, markup):
-    src, alt = markup.partition("|")[0::2]
+def image_writer(out, source):
+    src, alt = source.partition("|")[0::2]
     out.tag("img", {"src": src, "alt": alt or None})
 
 
-def pre_writer(out, markup):
-    return out.write_text(markup)
+def pre_writer(out, source):
+    return out.write_text(source)
 
 
-def script_writer(out, markup):
-    return out.element("script", raw=markup)
+def script_writer(out, source):
+    return out.element("script", raw=source)
 
 
 class HTML(object):
@@ -174,21 +176,21 @@ class Partitioner(object):
         self.markers.extend(markers)
         self.marker_chars = list(set(marker[0] for marker in self.markers))
 
-    def partition(self, markup):
+    def partition(self, source):
         self.tokens = []
         p, q = 0, 0
-        while q < len(markup):
-            if markup[q] in self.marker_chars:
-                if self.escape and markup[q] == self.escape:
+        while q < len(source):
+            if source[q] in self.marker_chars:
+                if self.escape and source[q] == self.escape:
                     start = q + len(self.escape)
                 else:
                     start = q
                 for seq in self.markers:
                     end = start + len(seq)
-                    if markup[start:end] == seq:
+                    if source[start:end] == seq:
                         if q > p:
-                            yield markup[p:q]
-                        yield markup[q:end]
+                            yield source[p:q]
+                        yield source[q:end]
                         p, q = end, end
                         break
                 else:
@@ -196,19 +198,19 @@ class Partitioner(object):
             else:
                 q += 1
         if q > p:
-            yield markup[p:q]
+            yield source[p:q]
 
 
 class Text(object):
 
-    def __init__(self, markup=None):
+    def __init__(self, source=None):
         partitioner = Partitioner("~",
             "http://", "https://", "ftp://", "mailto:", "<<", ">>",
             Quote.BLOCK_DELIMITER, Preformatted.BLOCK_START, Preformatted.BLOCK_END, "<--", "-->",
             "\\\\", "{{", "}}", Code.INLINE_DELIMITER, Quote.INLINE_DELIMITER,
             "**", "//", "^^", ",,", "[[", "]]", "|"
         )
-        self.tokens = list(partitioner.partition(markup))
+        self.tokens = list(partitioner.partition(source))
 
     @property
     def html(self):
@@ -228,16 +230,16 @@ class Text(object):
                     out.start_tag(tag)
             elif token in BRACKET_TOKENS:
                 end_token, writer = BRACKET_TOKENS[token]
-                markup = []
+                source = []
                 while tokens:
                     token = tokens.pop(0)
                     if token == end_token:
                         break
                     elif token[0] == "~":
-                        markup.append(token[1:])
+                        source.append(token[1:])
                     else:
-                        markup.append(token)
-                writer(out, "".join(markup))
+                        source.append(token)
+                writer(out, "".join(source))
             elif token == "[[":
                 href = []
                 while tokens:
@@ -267,13 +269,13 @@ class Text(object):
 class Heading(object):
 
     @classmethod
-    def check(cls, markup):
-        return markup.startswith("=")
+    def check(cls, source):
+        return source.startswith("=")
 
-    def __init__(self, markup):
-        if not Heading.check(markup):
+    def __init__(self, source):
+        if not Heading.check(source):
             raise ValueError("Heading must start with '='")
-        chars = list(markup)
+        chars = list(source)
         self.level = 0
         while chars and chars[0] == "=":
             chars.pop(0)
@@ -292,11 +294,11 @@ class Heading(object):
 class HorizontalRule(object):
 
     @classmethod
-    def check(cls, markup):
-        return markup.startswith("----")
+    def check(cls, source):
+        return source.startswith("----")
 
-    def __init__(self, markup):
-        if not HorizontalRule.check(markup):
+    def __init__(self, source):
+        if not HorizontalRule.check(source):
             raise ValueError("Horizontal rule must start with '----'")
 
     @property
@@ -309,18 +311,19 @@ class HorizontalRule(object):
 class ListItem(object):
 
     @classmethod
-    def check(cls, markup):
-        return markup and markup[0] in "#*"
+    def check(cls, source, content_type):
+        if content_type is ListItem or not source.startswith("**"):
+            return source and source[0] in "#*"
+        else:
+            return False
 
-    def __init__(self, markup):
-        if not ListItem.check(markup):
-            raise ValueError("List items must start with either '#' or '*'")
-        chars = list(markup)
-        self.signature = []
+    def __init__(self, source):
+        chars = list(source)
+        signature = []
         while chars and chars[0] in "#*":
-            self.signature.append(chars.pop(0))
-        self.signature = tuple(self.signature)
-        self.level = len(self.signature)
+            signature.append(chars.pop(0))
+        self.signature = tuple(signature)
+        self.level = len(signature)
         self.item = Text("".join(chars).strip())
 
     def ordered(self, level):
@@ -344,8 +347,8 @@ class Preformatted(object):
 
     BLOCK_START, BLOCK_END = "{{{", "}}}"
 
-    def __init__(self, markup):
-        self.text = markup
+    def __init__(self, source):
+        self.text = source
 
     @property
     def html(self):
@@ -359,8 +362,8 @@ class Code(object):
     INLINE_DELIMITER = "``"
     BLOCK_DELIMITER = "```"
 
-    def __init__(self, markup):
-        self.line = markup
+    def __init__(self, source):
+        self.line = source
 
     @property
     def html(self):
@@ -376,8 +379,8 @@ class Quote(object):
     INLINE_DELIMITER = '""'
     BLOCK_DELIMITER = '"""'
 
-    def __init__(self, markup):
-        self.text = Text(markup)
+    def __init__(self, source):
+        self.text = Text(source)
 
     @property
     def html(self):
@@ -386,8 +389,8 @@ class Quote(object):
 
 class TableRow(object):
 
-    def __init__(self, markup):
-        if not markup.startswith("|"):
+    def __init__(self, source):
+        if not source.startswith("|"):
             raise ValueError("Table row must start with '|'")
         bracket_tokens = {
             Code.INLINE_DELIMITER : Code.INLINE_DELIMITER,
@@ -399,11 +402,11 @@ class TableRow(object):
                                   "{{", "}}",
                                   Preformatted.BLOCK_START,
                                   Preformatted.BLOCK_END)
-        markup = markup.rstrip()
-        if markup.endswith("|"):
-            tokens = list(partitioner.partition(markup[:-1]))
+        source = source.rstrip()
+        if source.endswith("|"):
+            tokens = list(partitioner.partition(source[:-1]))
         else:
-            tokens = list(partitioner.partition(markup))
+            tokens = list(partitioner.partition(source))
         self.cells = []
         while tokens:
             token = tokens.pop(0)
@@ -426,9 +429,15 @@ class TableRow(object):
         out = HTML()
         out.start_tag("tr")
         for cell in self.cells:
-            if cell.startswith("="):
+            stripped_cell = cell.strip()
+            attributes = {}
+            if stripped_cell.startswith("="):
                 tag = "th"
                 content = cell[1:]
+            elif stripped_cell.startswith("`") and stripped_cell.endswith("`"):
+                tag = "td"
+                content = cell
+                attributes["class"] = "code"
             else:
                 tag = "td"
                 content = cell
@@ -444,9 +453,8 @@ class TableRow(object):
                     align = "right"
             if align:
                 content = content.strip()
-                out.element(tag, {"style": "text-align:" + align}, html=Text(content).html)
-            else:
-                out.element(tag, html=Text(content).html)
+                attributes["style"] = "text-align:%s" % align
+            out.element(tag, attributes, html=Text(content).html)
         out.end_tag("tr")
         return out.html
 
@@ -474,14 +482,14 @@ class Block(object):
             raise ValueError("Cannot add {0} to block of {1}".format(line.__class__.__name__, self.content_type.__name__))
 
 
-class Syntaq(object):
+class Document(object):
 
-    def __init__(self, markup):
+    def __init__(self, source):
         self.blocks = []
         self.title = None
         title_level = 7
         block = Block()
-        for line in markup.splitlines(True):
+        for line in source.splitlines(True):
             if block.content_type is Preformatted:
                 if line.startswith(Preformatted.BLOCK_END):
                     self.append(block)
@@ -506,20 +514,20 @@ class Syntaq(object):
                 if Heading.check(line):
                     self.append(block)
                     block = Block()
-                    markup = Heading(line)
-                    self.blocks.append(Block(Heading, lines=[markup]))
-                    if not self.title or markup.level < title_level:
-                        self.title, title_level = markup.text, markup.level
+                    source = Heading(line)
+                    self.blocks.append(Block(Heading, lines=[source]))
+                    if not self.title or source.level < title_level:
+                        self.title, title_level = source.text, source.level
                 elif line.startswith("----"):
                     self.append(block)
                     block = Block()
                     self.blocks.append(Block(HorizontalRule, lines=[HorizontalRule(line)]))
-                elif ListItem.check(stripped_line):
-                    markup = ListItem(stripped_line)
-                    if not (block and block.content_type is ListItem and block.lines[0].compatible(markup)):
+                elif ListItem.check(stripped_line, block.content_type):
+                    source = ListItem(stripped_line)
+                    if not (block and block.content_type is ListItem and block.lines[0].compatible(source)):
                         self.append(block)
                         block = Block(ListItem)
-                    block.lines.append(markup)
+                    block.lines.append(source)
                 elif line.startswith(Preformatted.BLOCK_START):
                     params = line.lstrip("{").strip().split()
                     self.append(block)
@@ -618,9 +626,21 @@ BRACKET_TOKENS = {
 }
 
 
+@get("/<name>")
+def content(name):
+    try:
+        with open("content/%s.syntaq" % name) as f:
+            source = f.read()
+            document = Document(source)
+            return template("templates/content.html", title=document.title, body=document.html)
+    except FileNotFoundError:
+        abort(404)
+
+
+@get("/_style/<name>.css")
+def style(name):
+    return static_file("%s.css" % name, "style")
+
+
 if __name__ == "__main__":
-    import codecs
-    import sys
-    for arg in sys.argv:
-        markup = codecs.open(sys.argv[1], "r", "UTF-8").read()
-        sys.stdout.write(Syntaq(markup).html)
+    run(reloader=True)

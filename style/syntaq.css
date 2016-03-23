@@ -25,7 +25,7 @@ html {
     /* font-family: "Droid Serif", "Lucida Bright", "Georgia", serif; */
     font-size: 12pt;
     line-height: 150%;
-    background-color: #FBFBF7;
+    background-color: #FFFFFF;
     margin: 20px;
 }
 body {
@@ -34,18 +34,19 @@ body {
     font-size: 12pt;
     line-height: 150%;
     background-color: transparent;
-    color: #141410;
+    color: #000000;
 }
 
 /* Headings */
 h1 { font-weight: bold; font-size: 200%; margin: .25em 0 .5em 0; }
-h2 { font-weight: bold; font-size: 150%; margin: .75em 0 .5em 0; padding-top: .75em; border-top: 1px solid #CCC; }
+h2 { font-weight: bold; font-size: 150%; margin: .75em 0 .5em 0; padding-top: .75em; border-top: 1px solid #E7E7E7; }
 h3 { font-weight: bold; font-size: 125%; margin: .75em 0 .5em 0; }
 h4 { font-weight: bold; font-size: 100%; margin: .75em 0 .5em 0; }
 h5 { font-weight: bold; font-size: 90%; margin: .75em 0 .5em 0; }
 h6 { font-weight: bold; font-size: 80%; margin: .75em 0 .5em 0; }
 
-code, pre, tt {
+code, pre, tt, .code {
+    background-color: #F7F7F7;
     font-family: "Droid Sans Mono", "Lucida Sans Typewriter", "Andale Mono", monospace;
     line-height: 150%;
 }
@@ -72,6 +73,9 @@ caption, th, td {
     border: 1px solid #CCC;
     padding: .25em .5em;
 }
+caption, th {
+    font-style: italic;
+}
 
 /* Quotations */
 blockquote:before, blockquote:after,
@@ -87,7 +91,6 @@ em { font-style: italic; }
 strong { font-weight: bold; }
 sup { font-size: .7em; position: relative; top: -.4em; }
 sub { font-size: .7em; position: relative; bottom: -.4em; }
-code {background-color: #E7E7E7;}
 
 a {
     color: #0087BD;
@@ -103,8 +106,6 @@ a:hover {
 /* Preformatted and code blocks */
 pre {
     display: block;
-    background-color: #E7E7E7;
-    color: #222;
     border: 1px solid #CCC;
     margin: .75em 0;
     padding: .5em .5em .5em .75em;

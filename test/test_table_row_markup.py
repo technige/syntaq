@@ -129,7 +129,7 @@ class TableRowMarkupTestCase(TestCase):
 
     def test_cell_with_code(self):
         line = TableRow("|``foo|bar``|")
-        assert line.html == '<tr><td><code>foo|bar</code></td></tr>'
+        assert line.html == '<tr><td class="code"><code>foo|bar</code></td></tr>'
 
     def test_cell_with_preformatted_content(self):
         line = TableRow("|{{{foo|bar}}}|")
@@ -151,6 +151,6 @@ class TableRowMarkupTestCase(TestCase):
         line = TableRow("|[[foo]]|[[foo~|bar]]|[[foo|bar]]|``foo|bar``|{{{foo|bar}}}|{{foo.jpg|bar}}|"
                         "[[foo|{{bar.jpg|baz}}]]|")
         assert line.html == ('<tr><td><a href="foo">foo</a></td><td><a href="foo|bar">foo|bar</a></td><td>'
-                             '<a href="foo">bar</a></td><td><code>foo|bar</code></td><td>foo|bar</td><td>'
+                             '<a href="foo">bar</a></td><td class="code"><code>foo|bar</code></td><td>foo|bar</td><td>'
                              '<img alt="bar" src="foo.jpg"></td><td><a href="foo"><img alt="baz" src="bar.jpg">'
                              '</a></td></tr>')

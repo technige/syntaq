@@ -43,6 +43,10 @@ class InlineMarkupTestCase(TestCase):
         line = Text("foo **bar**")
         assert line.html == "foo <strong>bar</strong>"
 
+    def test_strong_at_start_of_line(self):
+        line = Text("**foo** bar")
+        assert line.html == "<strong>foo</strong> bar"
+
     def test_single_asterisks(self):
         line = Text("foo *bar*")
         assert line.html == "foo *bar*"
