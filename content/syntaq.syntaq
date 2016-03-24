@@ -34,15 +34,10 @@ Note that while emphasis is continued across lines within the //same// paragraph
 == Code
 
 Backticks will create ``code`` tags which can also be inside ``pre`` tags.
-``` brush: js
-// this will return the maximum of a & b
-var max = function(a, b) {
-    if (a<b) {
-        return b;
-    } else {
-        return a;
-    }
-}
+``` cypher
+MATCH (a)-[ab:KNOWS]->(b)
+WHERE a.name = 'Alice' AND b.name = 'Bob'
+RETURN ab
 ```
 
 
@@ -61,6 +56,10 @@ var max = function(a, b) {
 == Tables
 
 == Literal Blocks & Escaping
+
+{{{
+---------1---------2---------3---------4---------5---------6---------7---------8
+}}}
 
 You can use nowiki syntax if you would like do stuff like this:
 

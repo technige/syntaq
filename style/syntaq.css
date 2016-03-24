@@ -21,20 +21,27 @@ table, caption, tbody, tfoot, thead, tr, th, td {
     outline: 0;
 }
 html {
-    font-family: "Droid Sans", "Lucida Sans", "Trebuchet", sans-serif;
-    /* font-family: "Droid Serif", "Lucida Bright", "Georgia", serif; */
+    font-family: "Fira Sans", sans-serif;
     font-size: 12pt;
     line-height: 150%;
     background-color: #FFFFFF;
     margin: 20px;
 }
 body {
-    font-family: "Droid Sans", "Lucida Sans", "Trebuchet", sans-serif;
-    /* font-family: "Droid Serif", "Lucida Bright", "Georgia", serif; */
-    font-size: 12pt;
-    line-height: 150%;
     background-color: transparent;
     color: #000000;
+    width: 826px;
+}
+
+a {
+    color: #C41843;
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}
+.hashtag {
+    color: #009F6B;
 }
 
 /* Headings */
@@ -45,9 +52,30 @@ h4 { font-weight: bold; font-size: 100%; margin: .75em 0 .5em 0; }
 h5 { font-weight: bold; font-size: 90%; margin: .75em 0 .5em 0; }
 h6 { font-weight: bold; font-size: 80%; margin: .75em 0 .5em 0; }
 
+h1 a { float: right; visibility: hidden }
+h2 a { float: right; visibility: hidden }
+h3 a { float: right; visibility: hidden }
+h4 a { float: right; visibility: hidden }
+h5 a { float: right; visibility: hidden }
+h6 a { float: right; visibility: hidden }
+
+h1:hover a { visibility: visible }
+h2:hover a { visibility: visible }
+h3:hover a { visibility: visible }
+h4:hover a { visibility: visible }
+h5:hover a { visibility: visible }
+h6:hover a { visibility: visible }
+
+h1 a:hover { text-decoration: none }
+h2 a:hover { text-decoration: none }
+h3 a:hover { text-decoration: none }
+h4 a:hover { text-decoration: none }
+h5 a:hover { text-decoration: none }
+h6 a:hover { text-decoration: none }
+
 code, pre, tt, .code {
-    background-color: #F7F7F7;
-    font-family: "Droid Sans Mono", "Lucida Sans Typewriter", "Andale Mono", monospace;
+    background-color: #F0F0F0;
+    font-family: "Fira Mono", monospace;
     line-height: 150%;
 }
 
@@ -92,16 +120,6 @@ strong { font-weight: bold; }
 sup { font-size: .7em; position: relative; top: -.4em; }
 sub { font-size: .7em; position: relative; bottom: -.4em; }
 
-a {
-    color: #0087BD;
-    text-decoration: none;
-}
-a:hover {
-    text-decoration: underline;
-}
-.hashtag {
-    color: #009F6B;
-}
 
 /* Preformatted and code blocks */
 pre {
@@ -112,6 +130,7 @@ pre {
     overflow: auto;
     cursor: text;
 }
+/*
 pre>ol {
     list-style: decimal outside;
     margin-left: 3em;
@@ -128,3 +147,4 @@ pre>ol>li>code {
     margin-left: 1em;
     background-color: inherit;
 }
+*/

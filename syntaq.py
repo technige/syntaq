@@ -19,8 +19,12 @@
 import re
 import string
 
-from bottle import abort, get, run, static_file, template
-
+from bottle import abort, get, response, run, static_file, template
+from pygments import highlight
+from pygments.lexers import get_lexer_by_name, guess_lexer
+from pygments.lexers.javascript import JavascriptLexer
+from pygments.formatters.html import HtmlFormatter
+from pygments.util import ClassNotFound
 
 __author__ = "Nigel Small <nigel@nigelsmall.name>"
 __copyright__ = "2011-2016 Nigel Small"
@@ -287,7 +291,11 @@ class Heading(object):
     @property
     def html(self):
         out = HTML()
-        out.element("h" + str(self.level), text=self.text)
+        tag = "h%d" % self.level
+        out.start_tag(tag)
+        out.write_text(self.text)
+        out.element("a", {"href": "#"}, raw="&sect;")
+        out.end_tag(tag)
         return out.html
 
 
@@ -461,9 +469,9 @@ class TableRow(object):
 
 class Block(object):
 
-    def __init__(self, content_type=None, params=None, lines=None):
+    def __init__(self, content_type=None, metadata=None, lines=None):
         self.content_type = content_type
-        self.params = params
+        self.metadata = metadata
         self.lines = []
         if lines:
             for line in lines:
@@ -529,17 +537,17 @@ class Document(object):
                         block = Block(ListItem)
                     block.lines.append(source)
                 elif line.startswith(Preformatted.BLOCK_START):
-                    params = line.lstrip("{").strip().split()
+                    metadata = line.lstrip("{").strip()
                     self.append(block)
-                    block = Block(Preformatted, params=params)
+                    block = Block(Preformatted, metadata=metadata)
                 elif line.startswith(Code.BLOCK_DELIMITER):
-                    params = line.lstrip("`").strip().split()
+                    metadata = line.lstrip("`").strip()
                     self.append(block)
-                    block = Block(Code, params=params)
+                    block = Block(Code, metadata=metadata)
                 elif line.startswith(Quote.BLOCK_DELIMITER):
-                    params = line.lstrip('"').strip().split()
+                    metadata = line.lstrip('"').strip()
                     self.append(block)
-                    block = Block(Quote, params=params)
+                    block = Block(Quote, metadata=metadata)
                 elif line.startswith("|"):
                     if block.content_type is not TableRow:
                         self.append(block)
@@ -570,16 +578,31 @@ class Document(object):
             elif block.content_type in (Heading, HorizontalRule):
                 for line in block.lines:
                     out.write_html(line.html)
-            elif block.content_type in (Code, Preformatted):
-                if block.params:
-                    out.start_tag("pre", {"class": " ".join(block.params)})
+            elif block.content_type is Preformatted:
+                if block.metadata:
+                    cls = block.metadata.split()[0]
+                    out.start_tag("pre", {"class": cls})
                 else:
                     out.start_tag("pre")
-                if block.content_type is Code:
-                    out.start_tag("ol")
                 for line in block.lines:
                     out.write_html(line.html)
                 out.end_tag("pre")
+            elif block.content_type is Code:
+                source = "".join(line.line for line in block.lines)
+                lang, _, metadata = block.metadata.partition(" ")
+                try:
+                    lexer = get_lexer_by_name(lang)
+                except ClassNotFound:
+                    try:
+                        lexer = guess_lexer(source)
+                    except ClassNotFound:
+                        lexer = None
+                if lexer is None:
+                    out.start_tag("pre")
+                    out.write_text(source)
+                    out.end_tag("pre")
+                else:
+                    out.write_raw(highlight(source, JavascriptLexer(), HtmlFormatter()))
             elif block.content_type is Quote:
                 out.start_tag("blockquote")
                 for line in block.lines:
@@ -635,6 +658,12 @@ def content(name):
             return template("templates/content.html", title=document.title, body=document.html)
     except FileNotFoundError:
         abort(404)
+
+
+@get("/_style/pygments.css")
+def pygments_style():
+    response.content_type = "text/css"
+    return HtmlFormatter().get_style_defs('.highlight')
 
 
 @get("/_style/<name>.css")

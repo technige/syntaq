@@ -169,33 +169,14 @@ class PreformattedTestCase(TestCase):
         ("{{{\nfoo > bar\n}}}", "<pre>foo &gt; bar\n</pre>"),
         ("{{{\nfoo\n}}}}", "<pre>foo\n</pre>"),
         ("{{{ bar\nfoo\n}}}", "<pre class=\"bar\">foo\n</pre>"),
-        ("{{{ bar baz\nfoo\n}}}", "<pre class=\"bar baz\">foo\n</pre>"),
+        ("{{{ bar baz\nfoo\n}}}", "<pre class=\"bar\">foo\n</pre>"),
         ("{{{bar\nfoo\n}}}", "<pre class=\"bar\">foo\n</pre>"),
-        ("{{{bar baz\nfoo\n}}}", "<pre class=\"bar baz\">foo\n</pre>"),
+        ("{{{bar baz\nfoo\n}}}", "<pre class=\"bar\">foo\n</pre>"),
         ("{{{ bar\nfoo\n}}}", "<pre class=\"bar\">foo\n</pre>"),
-        ("{{{ bar     baz\nfoo\n}}}", "<pre class=\"bar baz\">foo\n</pre>"),
-        ("{{{  bar\tbaz  \nfoo\n}}}", "<pre class=\"bar baz\">foo\n</pre>"),
+        ("{{{ bar     baz\nfoo\n}}}", "<pre class=\"bar\">foo\n</pre>"),
         ("{{{\nfoo\n}}}\n{{{\nbar\n}}}", "<pre>foo\n</pre><pre>bar\n</pre>"),
         ("{{{\nfoo\n----\nbar\n}}}", "<pre>foo\n----\nbar\n</pre>"),
         ("{{{\nfoo\n**bar**\n}}}", "<pre>foo\n**bar**\n</pre>"),
-    ]
-
-    def test_all(self):
-        for (markup, expected_html) in self.tests:
-            actual_html = Document(markup).html
-            try:
-                assert actual_html == expected_html
-            except AssertionError as err:
-                print(markup + "\n" + actual_html + " != " + expected_html)
-                raise err
-
-
-class CodeBlockTestCase(TestCase):
-
-    tests = [
-        ("```\nfoo\n```", "<pre><ol><li><code>foo\n</code></li></ol></pre>"),
-        ("``` foo bar\nbaz\n```", "<pre class=\"foo bar\"><ol><li><code>baz\n</code></li></ol></pre>"),
-        ("```\nfoo\nbar\n```", "<pre><ol><li><code>foo\n</code></li><li><code>bar\n</code></li></ol></pre>"),
     ]
 
     def test_all(self):
