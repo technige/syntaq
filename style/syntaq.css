@@ -30,11 +30,14 @@ html {
 body {
     background-color: transparent;
     color: #000000;
-    width: 826px;
+    margin: 0 auto;
+}
+#main {
+    min-width: 826px;
 }
 
 a {
-    color: #C41843;
+    color: #C40233;
     text-decoration: none;
 }
 a:hover {
@@ -45,12 +48,12 @@ a:hover {
 }
 
 /* Headings */
-h1 { font-weight: bold; font-size: 200%; margin: .25em 0 .5em 0; }
-h2 { font-weight: bold; font-size: 150%; margin: .75em 0 .5em 0; padding-top: .75em; border-top: 1px solid #E7E7E7; }
-h3 { font-weight: bold; font-size: 125%; margin: .75em 0 .5em 0; }
-h4 { font-weight: bold; font-size: 100%; margin: .75em 0 .5em 0; }
-h5 { font-weight: bold; font-size: 90%; margin: .75em 0 .5em 0; }
-h6 { font-weight: bold; font-size: 80%; margin: .75em 0 .5em 0; }
+h1 { font-weight: bold; font-size: 175%; margin: .0 0 .4em 0; padding-bottom: .4em; border-bottom: 1px solid #D7D7D7; }
+h2 { font-weight: bold; font-size: 150%; margin: 1.5em 0 .4em 0; padding-bottom: .4em; border-bottom: 1px solid #E7E7E7; }
+h3 { font-weight: bold; font-size: 125%; margin: .75em 0 .4em 0; }
+h4 { font-weight: bold; font-size: 100%; margin: .75em 0 .4em 0; }
+h5 { font-weight: bold; font-size: 90%; margin: .75em 0 .4em 0; }
+h6 { font-weight: bold; font-size: 80%; margin: .75em 0 .4em 0; }
 
 h1 a { float: right; visibility: hidden }
 h2 a { float: right; visibility: hidden }

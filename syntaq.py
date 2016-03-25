@@ -21,7 +21,7 @@ import string
 
 from bottle import abort, get, response, run, static_file, template
 from pygments import highlight
-from pygments.lexers import get_lexer_by_name, guess_lexer
+from pygments.lexers import get_lexer_by_name
 from pygments.lexers.javascript import JavascriptLexer
 from pygments.formatters.html import HtmlFormatter
 from pygments.util import ClassNotFound
@@ -290,11 +290,17 @@ class Heading(object):
 
     @property
     def html(self):
+        heading_text = self.text
+        heading_id = "".join(ch if ch in "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" else "-"
+                             for ch in heading_text)
+        heading_id = heading_id.strip("-").lower()
+        while "--" in heading_id:
+            heading_id = heading_id.replace("--", "-")
         out = HTML()
         tag = "h%d" % self.level
-        out.start_tag(tag)
-        out.write_text(self.text)
-        out.element("a", {"href": "#"}, raw="&sect;")
+        out.start_tag(tag, {"id": heading_id})
+        out.write_text(heading_text)
+        out.element("a", {"href": "#%s" % heading_id}, raw="&sect;")
         out.end_tag(tag)
         return out.html
 
@@ -593,10 +599,7 @@ class Document(object):
                 try:
                     lexer = get_lexer_by_name(lang)
                 except ClassNotFound:
-                    try:
-                        lexer = guess_lexer(source)
-                    except ClassNotFound:
-                        lexer = None
+                    lexer = None
                 if lexer is None:
                     out.start_tag("pre")
                     out.write_text(source)
