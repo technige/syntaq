@@ -68,7 +68,7 @@ class InlineMarkupTestCase(TestCase):
         assert line.html == "foo <sup>bar</sup>"
 
     def test_sub(self):
-        line = Text("foo ,,bar,,")
+        line = Text("foo __bar__")
         assert line.html == "foo <sub>bar</sub>"
 
     def test_q(self):

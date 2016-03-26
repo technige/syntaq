@@ -58,10 +58,6 @@ def image_writer(out, source):
     out.tag("img", {"src": src, "alt": alt or None})
 
 
-def pre_writer(out, source):
-    return out.write_text(source)
-
-
 def script_writer(out, source):
     return out.element("script", raw=source)
 
@@ -169,19 +165,15 @@ class HTML(object):
             self.write_html("</{0}>".format(t))
 
 
-class Partitioner(object):
+class Lexer(object):
 
     def __init__(self, escape, *markers):
         self.escape = escape
-        if escape:
-            self.markers = [self.escape]
-        else:
-            self.markers = []
+        self.markers = [self.escape]
         self.markers.extend(markers)
-        self.marker_chars = list(set(marker[0] for marker in self.markers))
+        self.marker_chars = set(marker[0] for marker in self.markers)
 
-    def partition(self, source):
-        self.tokens = []
+    def tokens(self, source):
         p, q = 0, 0
         while q < len(source):
             if source[q] in self.marker_chars:
@@ -208,13 +200,14 @@ class Partitioner(object):
 class Text(object):
 
     def __init__(self, source=None):
-        partitioner = Partitioner("~",
+        self.source = source
+        partitioner = Lexer("~",
             "http://", "https://", "ftp://", "mailto:", "<<", ">>",
-            Quote.BLOCK_DELIMITER, Preformatted.BLOCK_START, Preformatted.BLOCK_END, "<--", "-->",
-            "\\\\", "{{", "}}", Code.INLINE_DELIMITER, Quote.INLINE_DELIMITER,
+                            Quote.BLOCK_DELIMITER, "<--", "-->",
+            "\\\\", "{{", "}}", Literal.INLINE_DELIMITER, Quote.INLINE_DELIMITER,
             "**", "//", "^^", "__", "[[", "]]", "|"
-        )
-        self.tokens = list(partitioner.partition(source))
+                            )
+        self.tokens = list(partitioner.tokens(source))
 
     @property
     def html(self):
@@ -237,10 +230,10 @@ class Text(object):
                 source = []
                 while tokens:
                     token = tokens.pop(0)
-                    if token == end_token:
-                        break
-                    elif token[0] == "~":
+                    if token[0] == "~":
                         source.append(token[1:])
+                    elif token == end_token:
+                        break
                     else:
                         source.append(token)
                 writer(out, "".join(source))
@@ -284,7 +277,7 @@ class Heading(object):
         while chars and chars[0] == "=":
             chars.pop(0)
             self.level += 1
-        self.text = "".join(chars).strip().rstrip("=").rstrip()
+        self.text = Text("".join(chars).strip().rstrip("=").rstrip())
         if self.level > 6:
             self.level = 6
 
@@ -292,14 +285,14 @@ class Heading(object):
     def html(self):
         heading_text = self.text
         heading_id = "".join(ch if ch in "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" else "-"
-                             for ch in heading_text)
+                             for ch in heading_text.source)
         heading_id = heading_id.strip("-").lower()
         while "--" in heading_id:
             heading_id = heading_id.replace("--", "-")
         out = HTML()
         tag = "h%d" % self.level
         out.start_tag(tag, {"id": heading_id})
-        out.write_text(heading_text)
+        out.write_html(heading_text.html)
         out.element("a", {"href": "#%s" % heading_id}, raw="&sect;")
         out.end_tag(tag)
         return out.html
@@ -357,21 +350,7 @@ class ListItem(object):
         return out.html
 
 
-class Preformatted(object):
-
-    BLOCK_START, BLOCK_END = "{{{", "}}}"
-
-    def __init__(self, source):
-        self.text = source
-
-    @property
-    def html(self):
-        out = HTML()
-        out.write_text(self.text)
-        return out.html
-
-
-class Code(object):
+class Literal(object):
 
     INLINE_DELIMITER = "``"
     BLOCK_DELIMITER = "```"
@@ -404,39 +383,33 @@ class Quote(object):
 class TableRow(object):
 
     def __init__(self, source):
-        if not source.startswith("|"):
-            raise ValueError("Table row must start with '|'")
+        assert source.startswith("|")
         bracket_tokens = {
-            Code.INLINE_DELIMITER : Code.INLINE_DELIMITER,
+            Literal.INLINE_DELIMITER: Literal.INLINE_DELIMITER,
             "[[": "]]",
             "{{": "}}",
-            Preformatted.BLOCK_START: Preformatted.BLOCK_END,
         }
-        partitioner = Partitioner("~", "|", Code.INLINE_DELIMITER, "[[", "]]",
-                                  "{{", "}}",
-                                  Preformatted.BLOCK_START,
-                                  Preformatted.BLOCK_END)
+        lexer = Lexer("~", "|", Literal.INLINE_DELIMITER, "[[", "]]", "{{", "}}")
         source = source.rstrip()
         if source.endswith("|"):
-            tokens = list(partitioner.partition(source[:-1]))
-        else:
-            tokens = list(partitioner.partition(source))
-        self.cells = []
+            source = source[:-1]
+        tokens = list(lexer.tokens(source))
+        cells = []
         while tokens:
             token = tokens.pop(0)
             if token == "|":
-                self.cells.append([])
+                cells.append([])
             elif token in bracket_tokens:
                 end = bracket_tokens[token]
-                self.cells[-1].append(token)
+                cells[-1].append(token)
                 while tokens:
                     token = tokens.pop(0)
-                    self.cells[-1].append(token)
+                    cells[-1].append(token)
                     if token == end:
                         break
             else:
-                self.cells[-1].append(token)
-        self.cells = ["".join(cell) for cell in self.cells]
+                cells[-1].append(token)
+        self.cells = ["".join(cell) for cell in cells]
 
     @property
     def html(self):
@@ -496,104 +469,107 @@ class Block(object):
             raise ValueError("Cannot add {0} to block of {1}".format(line.__class__.__name__, self.content_type.__name__))
 
 
-class Document(object):
+class Parser(object):
 
-    def __init__(self, source):
+    def __init__(self):
         self.blocks = []
+        self.context = Block()
         self.title = None
-        title_level = 7
-        block = Block()
+        self.title_level = 7
+
+    def parse(self, source):
+
+        def append(block):
+            if block:
+                self.blocks.append(block)
+
+        def parse_literal(line):
+            if line.startswith(Literal.BLOCK_DELIMITER):
+                append(self.context)
+                self.context = Block()
+            else:
+                self.context.lines.append(Literal(line))
+
+        def parse_quote(line):
+            if line.startswith(Quote.BLOCK_DELIMITER):
+                append(self.context)
+                self.context = Block()
+            else:
+                self.context.lines.append(Quote(line))
+
         for line in source.splitlines(True):
-            if block.content_type is Preformatted:
-                if line.startswith(Preformatted.BLOCK_END):
-                    self.append(block)
-                    block = Block()
-                else:
-                    block.lines.append(Preformatted(line))
-            elif block.content_type is Code:
-                if line.startswith(Code.BLOCK_DELIMITER):
-                    self.append(block)
-                    block = Block()
-                else:
-                    block.lines.append(Code(line))
-            elif block.content_type is Quote:
-                if line.startswith(Quote.BLOCK_DELIMITER):
-                    self.append(block)
-                    block = Block()
-                else:
-                    block.lines.append(Quote(line))
+            if self.context.content_type is Literal:
+                parse_literal(line)
+            elif self.context.content_type is Quote:
+                parse_quote(line)
             else:
                 line = line.rstrip()
                 stripped_line = line.lstrip()
                 if Heading.check(line):
-                    self.append(block)
-                    block = Block()
+                    append(self.context)
+                    self.context = Block()
                     source = Heading(line)
-                    self.blocks.append(Block(Heading, lines=[source]))
-                    if not self.title or source.level < title_level:
-                        self.title, title_level = source.text, source.level
+                    append(Block(Heading, lines=[source]))
+                    if not self.title or source.level < self.title_level:
+                        self.title, self.title_level = source.text, source.level
                 elif line.startswith("----"):
-                    self.append(block)
-                    block = Block()
-                    self.blocks.append(Block(HorizontalRule, lines=[HorizontalRule(line)]))
-                elif ListItem.check(stripped_line, block.content_type):
+                    append(self.context)
+                    self.context = Block()
+                    append(Block(HorizontalRule, lines=[HorizontalRule(line)]))
+                elif ListItem.check(stripped_line, self.context.content_type):
                     source = ListItem(stripped_line)
-                    if not (block and block.content_type is ListItem and block.lines[0].compatible(source)):
-                        self.append(block)
-                        block = Block(ListItem)
-                    block.lines.append(source)
-                elif line.startswith(Preformatted.BLOCK_START):
-                    metadata = line.lstrip("{").strip()
-                    self.append(block)
-                    block = Block(Preformatted, metadata=metadata)
-                elif line.startswith(Code.BLOCK_DELIMITER):
+                    if not (self.context and self.context.content_type is ListItem and self.context.lines[0].compatible(source)):
+                        append(self.context)
+                        self.context = Block(ListItem)
+                    self.context.lines.append(source)
+                elif line.startswith(Literal.BLOCK_DELIMITER):
                     metadata = line.lstrip("`").strip()
-                    self.append(block)
-                    block = Block(Code, metadata=metadata)
+                    append(self.context)
+                    self.context = Block(Literal, metadata=metadata)
                 elif line.startswith(Quote.BLOCK_DELIMITER):
                     metadata = line.lstrip('"').strip()
-                    self.append(block)
-                    block = Block(Quote, metadata=metadata)
+                    append(self.context)
+                    self.context = Block(Quote, metadata=metadata)
                 elif line.startswith("|"):
-                    if block.content_type is not TableRow:
-                        self.append(block)
-                        block = Block(TableRow)
-                    block.lines.append(TableRow(line))
+                    if self.context.content_type is not TableRow:
+                        append(self.context)
+                        self.context = Block(TableRow)
+                    self.context.lines.append(TableRow(line))
                 else:
-                    if block.content_type is not None:
-                        self.append(block)
-                        block = Block()
+                    if self.context.content_type is not None:
+                        append(self.context)
+                        self.context = Block()
                     if line:
-                        block.lines.append(line)
+                        self.context.lines.append(line)
                     else:
-                        if block:
-                            self.blocks.append(block)
-                            block = Block()
-        self.append(block)
+                        if self.context:
+                            append(self.context)
+                            self.context = Block()
+        append(self.context)
 
-    def append(self, block):
-        if block:
-            self.blocks.append(block)
+
+class Document(object):
+
+    def __init__(self):
+        self.parser = Parser()
+        self.blocks = []
+        self.title = None
+        self.title_level = 7
+        self.block = Block()
+
+    def parse(self, source):
+        self.parser.parse(source)
 
     @property
     def html(self):
         out = HTML()
-        for block in self.blocks:
+        for block in self.parser.blocks:
             if block.content_type is None:
                 out.element("p", html=Text(" ".join(block.lines)).html)
             elif block.content_type in (Heading, HorizontalRule):
                 for line in block.lines:
                     out.write_html(line.html)
-            elif block.content_type is Preformatted:
-                if block.metadata:
-                    cls = block.metadata.split()[0]
-                    out.start_tag("pre", {"class": cls})
-                else:
-                    out.start_tag("pre")
-                for line in block.lines:
-                    out.write_html(line.html)
-                out.end_tag("pre")
-            elif block.content_type is Code:
+            elif block.content_type is Literal:
                 source = "".join(line.line for line in block.lines)
                 lang, _, metadata = block.metadata.partition(" ")
                 try:
@@ -646,9 +622,8 @@ TOGGLE_TOKENS = {
 }
 BRACKET_TOKENS = {
     "<<": (">>", script_writer),
-    Code.INLINE_DELIMITER: (Code.INLINE_DELIMITER, code_writer),
+    Literal.INLINE_DELIMITER: (Literal.INLINE_DELIMITER, code_writer),
     "{{": ("}}", image_writer),
-    Preformatted.BLOCK_START: (Preformatted.BLOCK_END, pre_writer),
 }
 
 
@@ -657,7 +632,8 @@ def content(name):
     try:
         with open("content/%s.syntaq" % name) as f:
             source = f.read()
-            document = Document(source)
+            document = Document()
+            document.parse(source)
             return template("templates/content.html", title=document.title, body=document.html)
     except FileNotFoundError:
         abort(404)

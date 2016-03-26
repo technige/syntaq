@@ -45,7 +45,7 @@ class ParagraphTestCase(TestCase):
         ("I'm **foo\n\nI'm **bar", "<p>I&apos;m <strong>foo</strong></p><p>I&apos;m <strong>bar</strong></p>"),
         ("//foo\n\n//bar", "<p><em>foo</em></p><p><em>bar</em></p>"),
         ("E=mc^^2^^", "<p>E=mc<sup>2</sup></p>"),
-        ("H,,2,,SO,,4,,", "<p>H<sub>2</sub>SO<sub>4</sub></p>"),
+        ("H__2__SO__4__", "<p>H<sub>2</sub>SO<sub>4</sub></p>"),
         ("Here is some code: ``print \"hello, world\"``",
          "<p>Here is some code: <code>print &quot;hello, world&quot;</code></p>"),
         ("Here is some more code: ``print 2 ** 3``", "<p>Here is some more code: <code>print 2 ** 3</code></p>"),
@@ -53,38 +53,29 @@ class ParagraphTestCase(TestCase):
 
     def test_all(self):
         for (markup, expected_html) in self.tests:
-            actual_html = Document(markup).html
+            document = Document()
+            document.parse(markup)
+            actual_html = document.html
             assert actual_html == expected_html
 
 
 class HeadingTestCase(TestCase):
 
     tests = [
-        ("=", "<h1></h1>"),
-        ("= ", "<h1></h1>"),
-        ("==", "<h2></h2>"),
-        ("== ", "<h2></h2>"),
-        ("=foo", "<h1>foo</h1>"),
-        ("=foo", "<h1>foo</h1>"),
-        ("=foo=", "<h1>foo</h1>"),
-        ("= foo", "<h1>foo</h1>"),
-        ("= foo =", "<h1>foo</h1>"),
-        ("= E=mc^2 =", "<h1>E=mc^2</h1>"),
-        ("==foo", "<h2>foo</h2>"),
-        ("==foo==", "<h2>foo</h2>"),
+        ("=", '<h1 id=""><a href="#">&sect;</a></h1>'),
+        ("= ", '<h1 id=""><a href="#">&sect;</a></h1>'),
+        ("==", '<h2 id=""><a href="#">&sect;</a></h2>'),
+        ("== ", '<h2 id=""><a href="#">&sect;</a></h2>'),
+        ("=Page Heading", '<h1 id="page-heading">Page Heading<a href="#page-heading">&sect;</a></h1>'),
+        ("=Page Heading=", '<h1 id="page-heading">Page Heading<a href="#page-heading">&sect;</a></h1>'),
+        ("= Page Heading", '<h1 id="page-heading">Page Heading<a href="#page-heading">&sect;</a></h1>'),
+        ("= Page Heading =", '<h1 id="page-heading">Page Heading<a href="#page-heading">&sect;</a></h1>'),
+        ("= E=mc^^2^^ =", '<h1 id="e-mc-2">E=mc<sup>2</sup><a href="#e-mc-2">&sect;</a></h1>'),
         ("== foo", "<h2>foo</h2>"),
-        ("== foo ==", "<h2>foo</h2>"),
-        ("== E=mc^2 ==", "<h2>E=mc^2</h2>"),
         ("=== foo", "<h3>foo</h3>"),
-        ("=== foo ===", "<h3>foo</h3>"),
         ("==== foo", "<h4>foo</h4>"),
-        ("==== foo ====", "<h4>foo</h4>"),
         ("===== foo", "<h5>foo</h5>"),
-        ("===== foo =====", "<h5>foo</h5>"),
         ("====== foo", "<h6>foo</h6>"),
-        ("====== foo ======", "<h6>foo</h6>"),
-        ("======= foo", "<h6>foo</h6>"),
-        ("======= foo =======", "<h6>foo</h6>"),
         ("=== foo ======", "<h3>foo</h3>"),
         ("====== foo ===", "<h6>foo</h6>"),
         ("= foo & bar", "<h1>foo &amp; bar</h1>"),
@@ -114,7 +105,9 @@ class HorizontalRuleTestCase(TestCase):
 
     def test_all(self):
         for (markup, expected_html) in self.tests:
-            actual_html = Document(markup).html
+            document = Document()
+            document.parse(markup)
+            actual_html = document.html
             try:
                 assert actual_html == expected_html
             except AssertionError as err:
@@ -147,41 +140,9 @@ class ListTestCase(TestCase):
 
     def test_all(self):
         for (markup, expected_html) in self.tests:
-            actual_html = Document(markup).html
-            try:
-                assert actual_html == expected_html
-            except AssertionError as err:
-                print(markup + "\n" + actual_html + " != " + expected_html)
-                raise err
-
-
-class PreformattedTestCase(TestCase):
-
-    tests = [
-        ("{{{\nfoo\n}}}", "<pre>foo\n</pre>"),
-        ("{{{\nfoo\nbar\n}}}", "<pre>foo\nbar\n</pre>"),
-        ("{{{\nfoo\n    bar\n}}}", "<pre>foo\n    bar\n</pre>"),
-        ("{{{\nfoo    \nbar\n}}}", "<pre>foo    \nbar\n</pre>"),
-        ("{{{\nfoo & bar\n}}}", "<pre>foo &amp; bar\n</pre>"),
-        ("{{{\nfoo 'bar'\n}}}", "<pre>foo &apos;bar&apos;\n</pre>"),
-        ("{{{\nfoo \"bar\"\n}}}", "<pre>foo &quot;bar&quot;\n</pre>"),
-        ("{{{\nfoo < bar\n}}}", "<pre>foo &lt; bar\n</pre>"),
-        ("{{{\nfoo > bar\n}}}", "<pre>foo &gt; bar\n</pre>"),
-        ("{{{\nfoo\n}}}}", "<pre>foo\n</pre>"),
-        ("{{{ bar\nfoo\n}}}", "<pre class=\"bar\">foo\n</pre>"),
-        ("{{{ bar baz\nfoo\n}}}", "<pre class=\"bar\">foo\n</pre>"),
-        ("{{{bar\nfoo\n}}}", "<pre class=\"bar\">foo\n</pre>"),
-        ("{{{bar baz\nfoo\n}}}", "<pre class=\"bar\">foo\n</pre>"),
-        ("{{{ bar\nfoo\n}}}", "<pre class=\"bar\">foo\n</pre>"),
-        ("{{{ bar     baz\nfoo\n}}}", "<pre class=\"bar\">foo\n</pre>"),
-        ("{{{\nfoo\n}}}\n{{{\nbar\n}}}", "<pre>foo\n</pre><pre>bar\n</pre>"),
-        ("{{{\nfoo\n----\nbar\n}}}", "<pre>foo\n----\nbar\n</pre>"),
-        ("{{{\nfoo\n**bar**\n}}}", "<pre>foo\n**bar**\n</pre>"),
-    ]
-
-    def test_all(self):
-        for (markup, expected_html) in self.tests:
-            actual_html = Document(markup).html
+            document = Document()
+            document.parse(markup)
+            actual_html = document.html
             try:
                 assert actual_html == expected_html
             except AssertionError as err:
@@ -197,7 +158,9 @@ class BlockQuoteTestCase(TestCase):
 
     def test_all(self):
         for (markup, expected_html) in self.tests:
-            actual_html = Document(markup).html
+            document = Document()
+            document.parse(markup)
+            actual_html = document.html
             try:
                 assert actual_html == expected_html
             except AssertionError as err:

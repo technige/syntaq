@@ -132,7 +132,7 @@ class TableRowMarkupTestCase(TestCase):
         assert line.html == '<tr><td class="code"><code>foo|bar</code></td></tr>'
 
     def test_cell_with_preformatted_content(self):
-        line = TableRow("|{{{foo|bar}}}|")
+        line = TableRow("|``foo|bar``|")
         assert line.html == '<tr><td>foo|bar</td></tr>'
 
     def test_cell_with_image_and_alt(self):
@@ -148,9 +148,9 @@ class TableRowMarkupTestCase(TestCase):
         assert line.html == '<tr><td><a href="foo"><img alt="baz" src="bar.jpg"></a></td></tr>'
 
     def test_cells_with_multiple_brackets(self):
-        line = TableRow("|[[foo]]|[[foo~|bar]]|[[foo|bar]]|``foo|bar``|{{{foo|bar}}}|{{foo.jpg|bar}}|"
+        line = TableRow("|[[foo]]|[[foo~|bar]]|[[foo|bar]]|``foo|bar``|{{foo.jpg|bar}}|"
                         "[[foo|{{bar.jpg|baz}}]]|")
         assert line.html == ('<tr><td><a href="foo">foo</a></td><td><a href="foo|bar">foo|bar</a></td><td>'
-                             '<a href="foo">bar</a></td><td class="code"><code>foo|bar</code></td><td>foo|bar</td><td>'
+                             '<a href="foo">bar</a></td><td class="code"><code>foo|bar</code></td>'
                              '<img alt="bar" src="foo.jpg"></td><td><a href="foo"><img alt="baz" src="bar.jpg">'
                              '</a></td></tr>')

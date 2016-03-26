@@ -6,12 +6,12 @@
 == Headings
 
 As with HTML, six levels of heading are supported. To denote a heading, simply begin (and optionally end) a line with between one and six //equals// signs.
-{{{
+```
 = Main Heading
 == Section Heading
 === Subsection Heading ===
 ==== Level 4 Heading ====
-}}}
+```
 
 
 == Emphasis
@@ -22,12 +22,13 @@ The table below shows a few combinations:
 |``hello, **world**``                                 | --> |hello, **world**     |
 |``hello, //world//``                                 | --> |hello, //world//     |
 |``hello, **//world//**`` \\ ``hello, //**world**//`` | --> |hello, **//world//** |
+|``This paragraph is **quite``\\``a long paragraph.``\\\\``Followed by a short one.``| --> |This paragraph is **quite\\a long paragraph.**\\\\Followed by a short one. |
+|``This sentence ~~~**does not~~~** contain any bold text``| --> |This sentence ~**does not~** contain any bold text|
 
 Note that while emphasis is continued across lines within the //same// paragraph, it does not continue into new paragraphs.
-
+Symbols generally used to denote emphasis can be escaped by a preceding tilde character.
 
 == Subscript & Superscript
-
 Superscript text is denoted by surrounding the text with double caret symbols.
 Subscript text is denoted by surrounding the text with double underscore symbols.
 
@@ -35,16 +36,20 @@ Subscript text is denoted by surrounding the text with double underscore symbols
 * H__2__SO__4__
 
 
-== Literal Text, Code & Escaping
+== Quotations
 
-Literal text is generally denoted by [[https://en.wikipedia.org/wiki/Grave_accent|backticks]].
+== Literal Text
+
+Literal text is generally denoted by //[[https://en.wikipedia.org/wiki/Grave_accent|backticks]]// and is rendered using a monospaced font.
 Double backticks denote inline literal text and triple backticks denote literal text blocks.
 
-```
----------1---------2---------3---------4---------5---------6---------7---------8
-```
+=== Inline Literal Text
 
-You can use nowiki syntax if you would like do stuff like this:
+Inline literal text simply requires enclosure between double backticks:
+
+|``We tried to determine values for ~``x~`` and ~``y~````| --> |We tried to determine values for ``x`` and ``y``|
+
+=== Literal Text Blocks
 
 ```
 Guitar Chord C:
@@ -57,9 +62,10 @@ Guitar Chord C:
 ||---|---|---|
 ```
 
-Literal stuff can be ``*inline*`` as well.
+=== Code Blocks
 
-Backticks will create ``code`` tags which can also be inside ``pre`` tags.
+Literal text blocks can also be used to render code by appending a language name after the opening backticks.
+
 ``` python
 def fibonacci():
     a, b = 0, 1
@@ -68,25 +74,13 @@ def fibonacci():
         yield a
 ```
 
-```
-< & "
-```
-
-Normal Link: http://wikicreole.org/ - now same link, but escaped: ~http://wikicreole.org/
-
-Normal asterisks: ~**not bold~**
-
-a tilde alone: ~
-
-a tilde escapes itself: ~~xxx
-
-== Quotations
+== Images
 
 == Links
 * Explicit
 * Auto-detected
 
-== Images
+Normal Link: http://wikicreole.org/ - now same link, but escaped: ~http://wikicreole.org/
 
 == Lists
 

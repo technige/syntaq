@@ -24,7 +24,7 @@ html {
     font-family: "Fira Sans", sans-serif;
     font-size: 12pt;
     line-height: 150%;
-    background-color: #FFFFFF;
+    background-color: #FFFFFD;
     margin: 20px;
 }
 body {
@@ -50,7 +50,7 @@ a:hover {
 /* Headings */
 h1 { font-weight: bold; font-size: 175%; margin: .0 0 .4em 0; padding-bottom: .4em; border-bottom: 1px solid #D7D7D7; }
 h2 { font-weight: bold; font-size: 150%; margin: 1.5em 0 .4em 0; padding-bottom: .4em; border-bottom: 1px solid #E7E7E7; }
-h3 { font-weight: bold; font-size: 125%; margin: .75em 0 .4em 0; }
+h3 { font-weight: bold; font-size: 125%; margin: 1.25em 0 .4em 0; }
 h4 { font-weight: bold; font-size: 100%; margin: .75em 0 .4em 0; }
 h5 { font-weight: bold; font-size: 90%; margin: .75em 0 .4em 0; }
 h6 { font-weight: bold; font-size: 80%; margin: .75em 0 .4em 0; }
@@ -127,8 +127,8 @@ blockquote, q {
 p { margin: .75em 0; }
 em { font-style: italic; }
 strong { font-weight: bold; }
-sup { font-size: .7em; position: relative; top: -.4em; }
-sub { font-size: .7em; position: relative; bottom: -.4em; }
+sup { font-size: .7em; position: relative; top: -.5em; }
+sub { font-size: .7em; position: relative; bottom:-.1em; }
 
 
 /* Preformatted and code blocks */
