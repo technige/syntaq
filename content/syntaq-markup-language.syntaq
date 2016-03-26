@@ -28,18 +28,59 @@ Note that while emphasis is continued across lines within the //same// paragraph
 
 == Subscript & Superscript
 
+Superscript text is denoted by surrounding the text with double caret symbols.
+Subscript text is denoted by surrounding the text with double underscore symbols.
 
-== Quotations
+* E = mc^^2^^
+* H__2__SO__4__
 
-== Code
 
-Backticks will create ``code`` tags which can also be inside ``pre`` tags.
-``` cypher
-MATCH (a)-[ab:KNOWS]->(b)
-WHERE a.name = 'Alice' AND b.name = 'Bob'
-RETURN ab
+== Literal Text, Code & Escaping
+
+Literal text is generally denoted by [[https://en.wikipedia.org/wiki/Grave_accent|backticks]].
+Double backticks denote inline literal text and triple backticks denote literal text blocks.
+
+```
+---------1---------2---------3---------4---------5---------6---------7---------8
 ```
 
+You can use nowiki syntax if you would like do stuff like this:
+
+```
+Guitar Chord C:
+
+||---|---|---|
+||-0-|---|---|
+||---|---|---|
+||---|-0-|---|
+||---|---|-0-|
+||---|---|---|
+```
+
+Literal stuff can be ``*inline*`` as well.
+
+Backticks will create ``code`` tags which can also be inside ``pre`` tags.
+``` python
+def fibonacci():
+    a, b = 0, 1
+    while True:
+        a, b = b, a + b
+        yield a
+```
+
+```
+< & "
+```
+
+Normal Link: http://wikicreole.org/ - now same link, but escaped: ~http://wikicreole.org/
+
+Normal asterisks: ~**not bold~**
+
+a tilde alone: ~
+
+a tilde escapes itself: ~~xxx
+
+== Quotations
 
 == Links
 * Explicit
@@ -54,32 +95,3 @@ RETURN ab
 == Horizontal Rules
 
 == Tables
-
-== Literal Blocks & Escaping
-
-{{{
----------1---------2---------3---------4---------5---------6---------7---------8
-}}}
-
-You can use nowiki syntax if you would like do stuff like this:
-
-{{{
-Guitar Chord C:
-
-||---|---|---|
-||-0-|---|---|
-||---|---|---|
-||---|-0-|---|
-||---|---|-0-|
-||---|---|---|
-}}}
-
-Literal stuff can be {{{*inline*}}} as well.
-
-Normal Link: http://wikicreole.org/ - now same link, but escaped: ~http://wikicreole.org/
-
-Normal asterisks: ~**not bold~**
-
-a tilde alone: ~
-
-a tilde escapes itself: ~~xxx

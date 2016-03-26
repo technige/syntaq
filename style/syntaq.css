@@ -55,26 +55,33 @@ h4 { font-weight: bold; font-size: 100%; margin: .75em 0 .4em 0; }
 h5 { font-weight: bold; font-size: 90%; margin: .75em 0 .4em 0; }
 h6 { font-weight: bold; font-size: 80%; margin: .75em 0 .4em 0; }
 
-h1 a { float: right; visibility: hidden }
-h2 a { float: right; visibility: hidden }
-h3 a { float: right; visibility: hidden }
-h4 a { float: right; visibility: hidden }
-h5 a { float: right; visibility: hidden }
-h6 a { float: right; visibility: hidden }
+h1 a,
+h2 a,
+h3 a,
+h4 a,
+h5 a,
+h6 a {
+    padding: 0 .5em;
+    visibility: hidden;
+}
 
-h1:hover a { visibility: visible }
-h2:hover a { visibility: visible }
-h3:hover a { visibility: visible }
-h4:hover a { visibility: visible }
-h5:hover a { visibility: visible }
-h6:hover a { visibility: visible }
+h1:hover a,
+h2:hover a,
+h3:hover a,
+h4:hover a,
+h5:hover a,
+h6:hover a {
+    visibility: visible;
+}
 
-h1 a:hover { text-decoration: none }
-h2 a:hover { text-decoration: none }
-h3 a:hover { text-decoration: none }
-h4 a:hover { text-decoration: none }
-h5 a:hover { text-decoration: none }
-h6 a:hover { text-decoration: none }
+h1 a:hover,
+h2 a:hover,
+h3 a:hover,
+h4 a:hover,
+h5 a:hover,
+h6 a:hover {
+    text-decoration: none;
+}
 
 code, pre, tt, .code {
     background-color: #F0F0F0;

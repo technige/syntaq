@@ -212,7 +212,7 @@ class Text(object):
             "http://", "https://", "ftp://", "mailto:", "<<", ">>",
             Quote.BLOCK_DELIMITER, Preformatted.BLOCK_START, Preformatted.BLOCK_END, "<--", "-->",
             "\\\\", "{{", "}}", Code.INLINE_DELIMITER, Quote.INLINE_DELIMITER,
-            "**", "//", "^^", ",,", "[[", "]]", "|"
+            "**", "//", "^^", "__", "[[", "]]", "|"
         )
         self.tokens = list(partitioner.partition(source))
 
@@ -641,7 +641,7 @@ TOGGLE_TOKENS = {
     "//": "em",
     Quote.INLINE_DELIMITER: "q",
     "**": "strong",
-    ",,": "sub",
+    "__": "sub",
     "^^": "sup",
 }
 BRACKET_TOKENS = {
