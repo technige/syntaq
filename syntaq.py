@@ -22,7 +22,6 @@ import string
 from bottle import abort, get, response, run, static_file, template
 from pygments import highlight
 from pygments.lexers import get_lexer_by_name
-from pygments.lexers.javascript import JavascriptLexer
 from pygments.formatters.html import HtmlFormatter
 from pygments.util import ClassNotFound
 
@@ -283,18 +282,21 @@ class Heading(object):
 
     @property
     def html(self):
-        heading_text = self.text
-        heading_id = "".join(ch if ch in "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" else "-"
-                             for ch in heading_text.source)
-        heading_id = heading_id.strip("-").lower()
-        while "--" in heading_id:
-            heading_id = heading_id.replace("--", "-")
         out = HTML()
-        tag = "h%d" % self.level
-        out.start_tag(tag, {"id": heading_id})
-        out.write_html(heading_text.html)
-        out.element("a", {"href": "#%s" % heading_id}, raw="&sect;")
-        out.end_tag(tag)
+        if self.level == 1:
+            out.element("h1", html=self.text.html)
+        else:
+            heading_text = self.text
+            heading_id = "".join(ch if ch in "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" else "-"
+                                 for ch in heading_text.source)
+            heading_id = heading_id.strip("-").lower()
+            while "--" in heading_id:
+                heading_id = heading_id.replace("--", "-")
+            tag = "h%d" % self.level
+            out.start_tag(tag, {"id": heading_id})
+            out.write_html(heading_text.html)
+            out.element("a", {"href": "#%s" % heading_id}, raw="&sect;")
+            out.end_tag(tag)
         return out.html
 
 
@@ -511,7 +513,7 @@ class Parser(object):
                     source = Heading(line)
                     append(Block(Heading, lines=[source]))
                     if not self.title or source.level < self.title_level:
-                        self.title, self.title_level = source.text, source.level
+                        self.title, self.title_level = source.text.html, source.level
                 elif line.startswith("----"):
                     append(self.context)
                     self.context = Block()
@@ -553,12 +555,14 @@ class Document(object):
     def __init__(self):
         self.parser = Parser()
         self.blocks = []
-        self.title = None
-        self.title_level = 7
         self.block = Block()
 
     def parse(self, source):
         self.parser.parse(source)
+
+    @property
+    def title(self):
+        return self.parser.title
 
     @property
     def html(self):
@@ -581,7 +585,7 @@ class Document(object):
                     out.write_text(source)
                     out.end_tag("pre")
                 else:
-                    out.write_raw(highlight(source, JavascriptLexer(), HtmlFormatter()))
+                    out.write_raw(highlight(source, lexer, HtmlFormatter()))
             elif block.content_type is Quote:
                 out.start_tag("blockquote")
                 for line in block.lines:

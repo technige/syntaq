@@ -67,6 +67,14 @@ Guitar Chord C:
 Literal text blocks can also be used to render code by appending a language name after the opening backticks.
 
 ``` python
+class Monkey(object):
+
+    def __init__(self):
+        self.monkeying = True
+
+def foo():
+    yield "bar"
+
 def fibonacci():
     a, b = 0, 1
     while True:
